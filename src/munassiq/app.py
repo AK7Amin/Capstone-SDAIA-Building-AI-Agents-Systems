@@ -11,16 +11,25 @@
 **حتمية الذاكرة**: تحميل ذكريات العضو وحقنها في السياق يقع في كل رحلة بلا
 شرط. لو تُرك الأمر لأداةٍ يقرر النموذج نداءها، لصار التذكّر احتمالًا لا
 ضمانًا — والروبرك يسأل عن ذاكرةٍ تعمل، لا عن ذاكرةٍ متاحة.
+
+**الوقوف البشري**: الفعل غير القابل للعكس (إرسال بريد باسم الجمعية) لا يقع
+إلا بعد ``interrupt`` يعرض على البشري مسودةً **مصوغةً سلفًا**. وموضع الوقوف
+جسمُ الـentrypoint نفسه لا داخل ``@task``: الـ``@task`` وحدة تُعاد أو
+تُستعاد كاملة، فوقوفٌ في وسطها يعني إعادة تنفيذ ما سبقه عند الاستئناف. وما
+يعود من الاستئناف يمضي **حرفيًا** إلى صندوق الصادر بلا أي تمرير على نموذج —
+وإلا لم يعد ما خرج تعديلَ البشري.
 """
 
 from uuid import uuid4
 
 from langgraph.config import get_store
 from langgraph.func import entrypoint, task
+from langgraph.types import Command, interrupt  # noqa: F401  (Command يُعاد تصديره)
 from pydantic import BaseModel, Field
 
 from munassiq.config import get_llm
 from munassiq.memory import MEMORY_NAMESPACE, build_memory
+from munassiq.tools import TriageDecision, send_approved_email, triage
 
 MEMORY_DETECTOR_PROMPT = (
     "أنت ذاكرة مساعد مكتب جمعية المحتوى الإسلامي. مهمتك وحدها أن تقرر: هل في "
@@ -37,6 +46,17 @@ SUPERVISOR_MEMORY_HEADER = (
     "ذكريات محفوظة عن هذا العضو من محادثات سابقة — اعتمدها متى كانت ذات صلة "
     "بالطلب، ولا تسأل المستخدم عمّا هو مذكور فيها:"
 )
+
+DRAFT_SYSTEM_PROMPT = (
+    "أنت كاتب مراسلات جمعية المحتوى الإسلامي. اكتب نص الرسالة التي يطلبها "
+    "المستخدم جاهزةً للإرسال: تحيةٌ، ثم المضمون كما ورد في الطلب بلا زيادة "
+    "من عندك، ثم خاتمة. بعربية فصيحة موجزة تليق بمراسلات الجمعية. "
+    "أخرج نص الرسالة وحده — بلا مقدمة ولا تعليق ولا شرح لما فعلت."
+)
+
+# ما يُعرض على البشري عند الوقوف: أمرٌ صريح بما هو مطلوب منه، لا مجرد
+# «موافق؟» — الحمولة هي كل ما يراه من يستأنف الرحلة.
+INTERRUPT_ACTION = "راجع المسودة واعتمدها أو عدّلها"
 
 # المشرف يُبنى مرة واحدة لكل عملية: بناؤه يشمل بناء فهرس RAG وتضميناته، وهو
 # أثقل من أن يُعاد في كل رحلة.
@@ -74,6 +94,16 @@ def _get_supervisor():
     return _SUPERVISOR
 
 
+def _message_text(message) -> str:
+    """نص رسالةٍ واحدة — يسوّي المحتوى المُقطَّع قائمةَ أجزاء إلى نص واحد."""
+    content = getattr(message, "content", "") or ""
+    if isinstance(content, list):
+        content = " ".join(
+            part.get("text", "") for part in content if isinstance(part, dict)
+        )
+    return content.strip()
+
+
 def _last_text(result) -> str:
     """آخر نص فعلي في رحلة المشرف.
 
@@ -81,14 +111,24 @@ def _last_text(result) -> str:
     نجد نصًّا — وإلا خرج ``reply`` فارغًا بلا أن يفشل شيء ظاهر.
     """
     for message in reversed(result.get("messages", [])):
-        content = getattr(message, "content", "") or ""
-        if isinstance(content, list):
-            content = " ".join(
-                part.get("text", "") for part in content if isinstance(part, dict)
-            )
-        if content.strip():
-            return content.strip()
+        text = _message_text(message)
+        if text:
+            return text
     return ""
+
+
+def needs_approval(decision: TriageDecision) -> bool:
+    """هل يقف التنفيذ لموافقة بشرية قبل تنفيذ هذا الطلب؟
+
+    دالة نقية عمدًا: شرطُ توجيهٍ مدفونٌ داخل جسم الـentrypoint لا يُفحص إلا
+    بنداء نموذج، وهذا يُفحص بلا شبكة أصلًا.
+
+    شرطان بينهما «أو» لا شرطٌ واحد: كون العامل ``correspondence`` كافٍ وحده،
+    فالمراسلة فعلٌ باسم الجمعية لا يُترك لعلمٍ قد يغفل النموذج عن رفعه؛
+    و``needs_human_approval`` كافٍ وحده أيضًا، فيغطي ما يوسمه النموذج غير
+    قابل للعكس في عاملٍ آخر.
+    """
+    return decision.worker == "correspondence" or decision.needs_human_approval
 
 
 @task
@@ -131,6 +171,51 @@ def detect_and_store_memory(request: str, user_id: str) -> str | None:
 
 
 @task
+def classify_request(request: str) -> TriageDecision:
+    """يصنّف الطلب مخرجًا مهيكلًا — نداء نموذج، فهو داخل ``@task``.
+
+    غلافٌ رفيع حول :func:`munassiq.tools.triage`: وجوده هنا ليس تكرارًا، بل
+    ليقع النداء داخل وحدةٍ تُستعاد من الـcheckpointer عند الاستئناف فلا
+    يُصنَّف الطلب مرتين ولا يتبدّل القرار الذي بُني عليه الوقوف.
+    """
+    return triage(request)
+
+
+@task
+def draft_correspondence(request: str, memories: list[str]) -> str:
+    """يصوغ نص الرسالة المطلوبة ويعيده — نداء نموذج داخل ``@task``.
+
+    الصياغة **قبل** الـinterrupt لا بعده: البشري يُطلب منه اعتماد نصٍّ
+    يقرؤه، لا التوقيع على فراغ. والذكريات تُحقن هنا أيضًا فتظل تفضيلات
+    العضو حاضرة في المسودة كما هي في بقية المسارات.
+    """
+    messages: list[dict] = [{"role": "system", "content": DRAFT_SYSTEM_PROMPT}]
+    if memories:
+        block = "\n".join(f"- {fact}" for fact in memories)
+        messages.append(
+            {"role": "system", "content": f"{SUPERVISOR_MEMORY_HEADER}\n{block}"}
+        )
+    messages.append({"role": "user", "content": request})
+
+    return _message_text(get_llm().invoke(messages))
+
+
+@task
+def send_final(approved_text: str) -> dict:
+    """يكتب النص المعتمَد من البشر في صندوق الصادر ويعيد الرد ومساره.
+
+    الفعل غير القابل للعكس، ولذلك هو داخل ``@task``: عند أي استئناف لاحق
+    على هذا الـthread يُستعاد ناتجه من الـcheckpointer فلا يُكتب الملف
+    مرتين. والنص يمضي إلى :func:`send_approved_email` **كما وصل** — لا
+    نموذج بينه وبين القرص.
+    """
+    return {
+        "reply": approved_text,
+        "outbox_path": send_approved_email(approved_text),
+    }
+
+
+@task
 def run_supervisor(request: str, memories: list[str], history: list[dict]) -> str:
     """يحقن الذكريات وسياق الأدوار السابقة ثم يشغّل المشرف ويعيد آخر نص.
 
@@ -169,7 +254,13 @@ def build_app(checkpointer=None, store=None):
         """يستقبل ``{"request": str, "user_id": str}`` ويعيد الرد وما ذُكر.
 
         الجسم غراءٌ نقي: لا نداء نموذج ولا كتابة هنا — كلها في الـ``@task``
-        أعلاه.
+        أعلاه. الاستثناء الوحيد ``interrupt``، وهو ليس أثرًا خارجيًا بل
+        آلية الوقوف نفسها، وموضعها الصحيح جسمُ الـentrypoint.
+
+        الناتج dict فيه ``reply`` و``memories_used`` و``turn``
+        و``outbox_path`` (``None`` لكل مسار لم يُرسل شيئًا). وفي رحلة
+        الوقوف يعود بدلًا منه dict مفتاحه ``__interrupt__`` من LangGraph
+        نفسه.
         """
         state = previous or {"turn": 0, "history": []}
         history = list(state.get("history", []))
@@ -182,14 +273,34 @@ def build_app(checkpointer=None, store=None):
         if stored and stored not in memories:
             memories = memories + [stored]
 
-        # نقطة الـinterrupt للشريحة 6 (اعتماد المراسلات) تدخل هنا — قبل
-        # ``run_supervisor`` وبعد اكتمال حكم التصنيف.
+        decision = classify_request(request).result()
 
-        reply = run_supervisor(request, memories, history).result()
+        if needs_approval(decision):
+            draft = draft_correspondence(request, memories).result()
+            # الوقوف هنا: المسودة جاهزة والفعل لم يقع بعد. قيمة الاستئناف
+            # (نص ``Command(resume=...)``) هي نص البشري، ويمضي كما هو.
+            approved = interrupt(
+                {
+                    "action": INTERRUPT_ACTION,
+                    "draft": draft,
+                    "summary": decision.summary,
+                }
+            )
+            sent = send_final(approved).result()
+            reply = sent["reply"]
+            outbox_path = sent["outbox_path"]
+        else:
+            reply = run_supervisor(request, memories, history).result()
+            outbox_path = None
 
         turn = int(state.get("turn", 0)) + 1
         history = history + [{"request": request, "reply": reply}]
-        result = {"reply": reply, "memories_used": memories, "turn": turn}
+        result = {
+            "reply": reply,
+            "memories_used": memories,
+            "turn": turn,
+            "outbox_path": outbox_path,
+        }
         return entrypoint.final(
             value=result, save={"turn": turn, "history": history}
         )
