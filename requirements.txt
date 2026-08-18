@@ -1,0 +1,17 @@
+langchain
+langchain-groq
+langchain-community
+langchain-chroma
+langgraph
+langgraph-supervisor
+langgraph-checkpoint-sqlite
+langsmith
+fastembed
+chromadb
+python-dotenv
+pytest
+jupyter
+nbconvert
+ipykernel
+pytest-rerunfailures
+pytest-timeout

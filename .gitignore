@@ -1,0 +1,20 @@
+# البيئة والأسرار — لا يدخل git أي سر أبدًا
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# مخازن وقواعد محلية مولَّدة
+data/chroma/
+data/outbox/
+local_cache/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.db
+
+# مخلفات أدوات
+.mypy_cache/
+.ruff_cache/
