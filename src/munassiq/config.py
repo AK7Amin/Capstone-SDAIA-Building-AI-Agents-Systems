@@ -24,10 +24,16 @@ load_dotenv(dotenv_path=ENV_PATH)
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 
+# النموذج الافتراضي هو الأقوى المتاح على الحساب؛ MUNASSIQ_MODEL يسمح بالتحويل
+# المؤقت إلى نموذج شقيق بميزانية tokens مستقلة عند بلوغ سقف Groq اليومي
+# (حدود Groq تُحسب لكل نموذج على حدة).
+DEFAULT_MODEL = "openai/gpt-oss-120b"
+
+
 def get_llm() -> ChatGroq:
     """يبني عميل ChatGroq المشترك بالمواصفات الموحّدة لكل وكلاء المشروع."""
     return ChatGroq(
-        model="openai/gpt-oss-120b",
+        model=os.environ.get("MUNASSIQ_MODEL", DEFAULT_MODEL),
         temperature=0,
         max_retries=2,
         timeout=60,
