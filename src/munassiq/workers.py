@@ -7,8 +7,8 @@
 الاسم (``name``) **إلزامي** لكل عامل: منه يشتقّ المشرف أداة التسليم
 ``transfer_to_<name>``. عاملٌ بلا اسم يعني مشرفًا بلا يدٍ يسلّم بها.
 
-عامل المعرفة (RAG) يُضاف في الشريحة 4 كدالة ``build_*_agent`` أخرى، ويُدرج
-في قائمة المشرف — لا تعديل على ما هنا حين يأتي.
+عامل المعرفة (RAG) أُضيف في الشريحة 4 على النمط نفسه: أداة بحث واحدة في
+وثائق الجمعية، وتعليمات تحصر جوابه في المقاطع المسترجَعة.
 """
 
 from langgraph.graph.state import CompiledStateGraph
@@ -16,6 +16,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
 
 from munassiq.config import get_llm
+from munassiq.rag import build_knowledge_tool
 from munassiq.tools import create_event, list_events, save_email_draft
 
 CALENDAR_AGENT_PROMPT = (
@@ -38,6 +39,18 @@ CORRESPONDENCE_AGENT_PROMPT = (
     "ثم أجب بجملة واحدة تذكر أن المسودة حُفظت."
 )
 
+KNOWLEDGE_AGENT_PROMPT = (
+    "أنت عامل المعرفة في مكتب جمعية المحتوى الإسلامي. مهمتك الإجابة عن "
+    "الأسئلة المتعلقة بسياسات الجمعية وإجراءاتها وأدلتها، لا غير. "
+    "استعمل أداة search_policies للبحث في الوثائق قبل أي جواب، ولك أن "
+    "تكررها بصياغات مختلفة إن لم تكفِ النتيجة الأولى. "
+    "أجب من المقاطع المسترجَعة وحدها ولا تضف من معرفتك العامة شيئًا، "
+    "وانقل الأرقام والمدد كما وردت في المقطع حرفيًا. "
+    "وإن لم تجد الجواب في المقاطع فقل «لا أجد هذا في وثائق الجمعية» "
+    "ولا تخمّن. "
+    "ثم أجب بعربية موجزة مع ذكر الوثيقة التي جاء منها الجواب."
+)
+
 
 def build_calendar_agent() -> CompiledStateGraph:
     """يبني عامل التقويم: أدوات الحجز والعرض وحدها في متناوله."""
@@ -56,4 +69,18 @@ def build_correspondence_agent() -> CompiledStateGraph:
         [save_email_draft],
         system_prompt=CORRESPONDENCE_AGENT_PROMPT,
         name="correspondence_agent",
+    )
+
+
+def build_knowledge_agent() -> CompiledStateGraph:
+    """يبني عامل المعرفة: البحث في وثائق الجمعية وحده في متناوله.
+
+    الوكيل هو من يقرر متى يستعلم وكم مرة — هذا هو Agentic RAG بخلاف خطٍّ
+    ثابت يسترجع مرة واحدة قبل كل جواب.
+    """
+    return create_agent(
+        get_llm(),
+        [build_knowledge_tool()],
+        system_prompt=KNOWLEDGE_AGENT_PROMPT,
+        name="knowledge_agent",
     )
