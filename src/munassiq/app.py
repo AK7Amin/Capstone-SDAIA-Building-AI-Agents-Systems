@@ -308,8 +308,8 @@ def improve_draft(
 
 
 @task
-def draft_correspondence(request: str, memories: list[str]) -> str:
-    """يصوغ المسودة ويُنقّحها بحلقة مراجعة، ويعيد أفضل نصٍّ بلغته.
+def draft_correspondence(request: str, memories: list[str]) -> dict:
+    """يصوغ المسودة ويُنقّحها بحلقة مراجعة، ويعيد النص وحصيلة الحلقة.
 
     # نمط Evaluator-Optimizer
     صياغة ← تقييم ← (إن لم يُعتمد) تحسينٌ بالملاحظات ← إعادة تقييم، بسقف
@@ -324,6 +324,12 @@ def draft_correspondence(request: str, memories: list[str]) -> str:
 
     وحدّ الجولتين صلب: مقيّمٌ لا يقتنع أبدًا لا يُدير حلقةً بلا نهاية —
     تُعرض آخر مسودةٍ على البشري، وهو الحَكَم الأخير أصلًا.
+
+    Returns:
+        ``{"draft": str, "rounds": int, "score": int, "approved": bool}`` —
+        الحصيلة تعود مع النص لا تُطرح جانبًا: النمط المسمّى يُطالَب بدليلٍ
+        مطبوع (كم جولةً دارت وبأي درجة انتهت)، وحسابُها هنا فيُقرأ من ناتج
+        المهمة أوثق من إعادة استنتاجه من الخارج.
     """
     draft = compose_draft(request, memories).result()
 
@@ -334,7 +340,29 @@ def draft_correspondence(request: str, memories: list[str]) -> str:
         verdict = evaluate_draft(request, draft).result()
         rounds += 1
 
-    return draft
+    return {
+        "draft": draft,
+        "rounds": rounds,
+        "score": verdict.score,
+        "approved": verdict.approved,
+    }
+
+
+def _draft_parts(drafted) -> tuple[str, int | None, int | None]:
+    """يفكّ ناتج حلقة المراجعة إلى (نص، عدد الجولات، الدرجة).
+
+    دالة نقية في جسم الغراء لا نداءَ فيها: تقبل الشكل الغني ``dict``، وتقبل
+    نصًّا مجردًا فتعيد حصيلةً فارغة. قبول النص المجرد ليس تساهلًا — مهمةٌ
+    مستبدَلة في اختبارٍ قد تعيد سلسلة، وناتجٌ مستعاد من checkpointer كُتب قبل
+    هذه الإضافة كذلك، ولا يصح أن ينكسر مسار الوقوف البشري على شكلٍ أضيق.
+    """
+    if isinstance(drafted, dict):
+        return (
+            str(drafted.get("draft", "")),
+            drafted.get("rounds"),
+            drafted.get("score"),
+        )
+    return str(drafted), None, None
 
 
 @task
@@ -395,9 +423,11 @@ def build_app(checkpointer=None, store=None):
         آلية الوقوف نفسها، وموضعها الصحيح جسمُ الـentrypoint.
 
         الناتج dict فيه ``reply`` و``memories_used`` و``turn``
-        و``outbox_path`` (``None`` لكل مسار لم يُرسل شيئًا). وفي رحلة
-        الوقوف يعود بدلًا منه dict مفتاحه ``__interrupt__`` من LangGraph
-        نفسه.
+        و``outbox_path`` (``None`` لكل مسار لم يُرسل شيئًا) و``evaluation``
+        (حصيلة حلقة Evaluator-Optimizer: ``rounds`` و``score``، و``None``
+        على المسار الذي لا حلقة فيه). وفي رحلة الوقوف يعود بدلًا منه dict
+        مفتاحه ``__interrupt__`` من LangGraph نفسه، وحمولته تحمل الحصيلة
+        نفسها في ``evaluation_rounds`` و``evaluation_score``.
         """
         state = previous or {"turn": 0, "history": []}
         history = list(state.get("history", []))
@@ -416,7 +446,8 @@ def build_app(checkpointer=None, store=None):
             # نمط Evaluator-Optimizer داخل هذه المهمة: صياغة ← تقييم ←
             # تحسين ← تقييم. تكتمل كاملةً **قبل** السطر التالي، فما يراه
             # البشري نصٌّ نُقّح لا مسوّدة خام.
-            draft = draft_correspondence(request, memories).result()
+            drafted = draft_correspondence(request, memories).result()
+            draft, rounds, score = _draft_parts(drafted)
             # الوقوف هنا: المسودة جاهزة والفعل لم يقع بعد. قيمة الاستئناف
             # (نص ``Command(resume=...)``) هي نص البشري، ويمضي كما هو.
             approved = interrupt(
@@ -424,14 +455,18 @@ def build_app(checkpointer=None, store=None):
                     "action": INTERRUPT_ACTION,
                     "draft": draft,
                     "summary": decision.summary,
+                    "evaluation_rounds": rounds,
+                    "evaluation_score": score,
                 }
             )
             sent = send_final(approved).result()
             reply = sent["reply"]
             outbox_path = sent["outbox_path"]
+            evaluation = {"rounds": rounds, "score": score}
         else:
             reply = run_supervisor(request, memories, history).result()
             outbox_path = None
+            evaluation = None
 
         turn = int(state.get("turn", 0)) + 1
         history = history + [{"request": request, "reply": reply}]
@@ -440,6 +475,7 @@ def build_app(checkpointer=None, store=None):
             "memories_used": memories,
             "turn": turn,
             "outbox_path": outbox_path,
+            "evaluation": evaluation,
         }
         return entrypoint.final(
             value=result, save={"turn": turn, "history": history}
