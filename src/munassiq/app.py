@@ -18,6 +18,14 @@
 تُستعاد كاملة، فوقوفٌ في وسطها يعني إعادة تنفيذ ما سبقه عند الاستئناف. وما
 يعود من الاستئناف يمضي **حرفيًا** إلى صندوق الصادر بلا أي تمرير على نموذج —
 وإلا لم يعد ما خرج تعديلَ البشري.
+
+**نمط Evaluator-Optimizer**: مسار المراسلات لا يعرض أول ما يخطر للنموذج.
+:func:`draft_correspondence` تدير حلقةً مسمّاة — صياغة، ثم تقييمٌ بحكمٍ
+مهيكل، ثم تحسينٌ بالملاحظات إن رُفضت المسودة، ثم إعادة تقييم — بسقف
+:data:`MAX_EVALUATION_ROUNDS`. والحلقة كلها تسبق الـinterrupt: البشري
+مراجعٌ أخير لنصٍّ نُقّح، لا مصحّحُ مسوّدةٍ خام. وهي مطويّة داخل ``@task``
+واحدة لا مبسوطةٌ في جسم الـentrypoint، فتُستعاد وحدةً واحدة من
+الـcheckpointer عند الاستئناف بدل أن تُعاد جولاتها.
 """
 
 from uuid import uuid4
@@ -54,6 +62,29 @@ DRAFT_SYSTEM_PROMPT = (
     "أخرج نص الرسالة وحده — بلا مقدمة ولا تعليق ولا شرح لما فعلت."
 )
 
+EVALUATOR_SYSTEM_PROMPT = (
+    "أنت مراجع مراسلات جمعية المحتوى الإسلامي. أمامك طلب المستخدم والمسودة "
+    "المكتوبة استجابةً له. قيّمها على أربعة معايير: هل تنقل ما طُلب كاملًا، "
+    "وهل خلت من زيادةٍ لم تَرِد في الطلب، وهل لغتها عربية فصيحة موجزة تليق "
+    "بمراسلات الجمعية، وهل فيها تحية وخاتمة. "
+    "أعطِ درجة من 1 إلى 10، واجعل approved تساوي true إن كانت المسودة صالحة "
+    "للعرض على المسؤول البشري كما هي. "
+    "وإن لم تعتمدها فاكتب في feedback ملاحظاتٍ محددة تقول ما يُصلَح بالضبط "
+    "وكيف، لا حكمًا عامًا مثل «تحتاج تحسينًا»."
+)
+
+OPTIMIZER_SYSTEM_PROMPT = (
+    "أنت كاتب مراسلات جمعية المحتوى الإسلامي. أمامك مسودةٌ وملاحظات مراجعٍ "
+    "عليها. أعد كتابة المسودة معالجًا كل ملاحظة، محافظًا على مضمون الطلب كما "
+    "ورد بلا زيادة من عندك. "
+    "أخرج نص الرسالة المحسّنة وحدها — بلا مقدمة ولا تعليق ولا ذكر للملاحظات."
+)
+
+# سقف جولات التقييم في حلقة Evaluator-Optimizer. اثنتان لا أكثر: الجولة
+# الثانية هي التي تُثبت أن الملاحظات عولجت، وما بعدها كلفةٌ ونداءات نموذج
+# إضافية على مسارٍ ينتهي أصلًا إلى مراجعٍ بشري.
+MAX_EVALUATION_ROUNDS = 2
+
 # ما يُعرض على البشري عند الوقوف: أمرٌ صريح بما هو مطلوب منه، لا مجرد
 # «موافق؟» — الحمولة هي كل ما يراه من يستأنف الرحلة.
 INTERRUPT_ACTION = "راجع المسودة واعتمدها أو عدّلها"
@@ -61,6 +92,33 @@ INTERRUPT_ACTION = "راجع المسودة واعتمدها أو عدّلها"
 # المشرف يُبنى مرة واحدة لكل عملية: بناؤه يشمل بناء فهرس RAG وتضميناته، وهو
 # أثقل من أن يُعاد في كل رحلة.
 _SUPERVISOR = None
+
+
+class DraftVerdict(BaseModel):
+    """حكم المراجع على مسودةٍ واحدة — مخرجٌ مهيكل لا نصٌّ يُفتَّش فيه.
+
+    قرارُ الاعتماد يُقرأ من :attr:`approved` وحده. البديل — البحث عن كلمة
+    «معتمدة» في نص الملاحظات — يجعل قرارًا تنفيذيًا رهينةَ صياغةٍ قد تذكر
+    الكلمة نفيًا أو اقتباسًا، وهو بالضبط ما يفحصه اختبار الشريحة.
+    """
+
+    score: int = Field(
+        ge=1,
+        le=10,
+        description="درجة المسودة من 1 (غير صالحة) إلى 10 (جاهزة كما هي).",
+    )
+    approved: bool = Field(
+        description=(
+            "هل المسودة صالحة للعرض على المسؤول البشري كما هي؟ false إن كانت "
+            "تحتاج تحسينًا قبل العرض."
+        )
+    )
+    feedback: str = Field(
+        description=(
+            "ملاحظات عملية محددة تقول ما يُصلَح وكيف، أو نص فارغ إن كانت "
+            "approved تساوي true."
+        )
+    )
 
 
 class MemoryCandidate(BaseModel):
@@ -181,23 +239,102 @@ def classify_request(request: str) -> TriageDecision:
     return triage(request)
 
 
+def _memory_messages(memories: list[str]) -> list[dict]:
+    """رسالة نظامٍ واحدة بالذكريات، أو لا شيء إن لم تكن هناك ذكريات."""
+    if not memories:
+        return []
+    block = "\n".join(f"- {fact}" for fact in memories)
+    return [{"role": "system", "content": f"{SUPERVISOR_MEMORY_HEADER}\n{block}"}]
+
+
+@task
+def compose_draft(request: str, memories: list[str]) -> str:
+    """يصوغ المسودة الأولى — الخطوة المولِّدة في حلقة Evaluator-Optimizer.
+
+    الذكريات تُحقن هنا أيضًا فتظل تفضيلات العضو حاضرة في المسودة كما هي في
+    بقية المسارات.
+    """
+    messages = (
+        [{"role": "system", "content": DRAFT_SYSTEM_PROMPT}]
+        + _memory_messages(memories)
+        + [{"role": "user", "content": request}]
+    )
+    return _message_text(get_llm().invoke(messages))
+
+
+@task
+def evaluate_draft(request: str, draft: str) -> DraftVerdict:
+    """يحكم على المسودة حكمًا مهيكلًا — الخطوة المقيِّمة Evaluator.
+
+    الحكم :class:`DraftVerdict` عبر ``with_structured_output``: يعود حقلٌ
+    منطقي يُقرأ مباشرة، فلا يُبنى قرار الحلقة على تفتيشٍ في نصٍّ حر.
+    """
+    judge = get_llm().with_structured_output(DraftVerdict)
+    return judge.invoke(
+        [
+            {"role": "system", "content": EVALUATOR_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": f"طلب المستخدم:\n{request}\n\nالمسودة:\n{draft}",
+            },
+        ]
+    )
+
+
+@task
+def improve_draft(
+    request: str, draft: str, feedback: str, memories: list[str]
+) -> str:
+    """يعيد كتابة المسودة معالجًا ملاحظات المقيّم — الخطوة المحسِّنة Optimizer.
+
+    الملاحظات تدخل السياق نصًّا صريحًا: التحسين بلا ملاحظاتٍ إعادةُ صياغةٍ
+    عمياء قد تُفسد ما كان سليمًا.
+    """
+    messages = (
+        [{"role": "system", "content": OPTIMIZER_SYSTEM_PROMPT}]
+        + _memory_messages(memories)
+        + [
+            {
+                "role": "user",
+                "content": (
+                    f"طلب المستخدم:\n{request}\n\n"
+                    f"المسودة الحالية:\n{draft}\n\n"
+                    f"ملاحظات المراجع:\n{feedback}"
+                ),
+            }
+        ]
+    )
+    return _message_text(get_llm().invoke(messages))
+
+
 @task
 def draft_correspondence(request: str, memories: list[str]) -> str:
-    """يصوغ نص الرسالة المطلوبة ويعيده — نداء نموذج داخل ``@task``.
+    """يصوغ المسودة ويُنقّحها بحلقة مراجعة، ويعيد أفضل نصٍّ بلغته.
 
-    الصياغة **قبل** الـinterrupt لا بعده: البشري يُطلب منه اعتماد نصٍّ
-    يقرؤه، لا التوقيع على فراغ. والذكريات تُحقن هنا أيضًا فتظل تفضيلات
-    العضو حاضرة في المسودة كما هي في بقية المسارات.
+    # نمط Evaluator-Optimizer
+    صياغة ← تقييم ← (إن لم يُعتمد) تحسينٌ بالملاحظات ← إعادة تقييم، بسقف
+    :data:`MAX_EVALUATION_ROUNDS` جولتين. كل مسودةٍ تخرج من هنا قد مرّت على
+    المقيّم — لا يُسلَّم للبشري نصٌّ حُسِّن بلا أن يُراجَع بعد تحسينه.
+
+    الحلقة مطويّة داخل هذه المهمة لا مبسوطةً في جسم الـentrypoint، لسببين:
+    نتائجها تُستعاد وحدةً واحدة من الـcheckpointer عند الاستئناف؛ ومسار
+    المراسلات يبقى في جسم الـentrypoint نداءً واحدًا يسبق الـinterrupt
+    فيظل الجسم غراءً نقيًا مقروءًا. ونداء ``@task`` من داخل ``@task`` مدعوم
+    (مُثبَت بسبايك الشريحة).
+
+    وحدّ الجولتين صلب: مقيّمٌ لا يقتنع أبدًا لا يُدير حلقةً بلا نهاية —
+    تُعرض آخر مسودةٍ على البشري، وهو الحَكَم الأخير أصلًا.
     """
-    messages: list[dict] = [{"role": "system", "content": DRAFT_SYSTEM_PROMPT}]
-    if memories:
-        block = "\n".join(f"- {fact}" for fact in memories)
-        messages.append(
-            {"role": "system", "content": f"{SUPERVISOR_MEMORY_HEADER}\n{block}"}
-        )
-    messages.append({"role": "user", "content": request})
+    draft = compose_draft(request, memories).result()
 
-    return _message_text(get_llm().invoke(messages))
+    verdict = evaluate_draft(request, draft).result()
+    rounds = 1
+    while not verdict.approved and rounds < MAX_EVALUATION_ROUNDS:
+        draft = improve_draft(request, draft, verdict.feedback, memories).result()
+        verdict = evaluate_draft(request, draft).result()
+        rounds += 1
+
+    return draft
 
 
 @task
@@ -276,6 +413,9 @@ def build_app(checkpointer=None, store=None):
         decision = classify_request(request).result()
 
         if needs_approval(decision):
+            # نمط Evaluator-Optimizer داخل هذه المهمة: صياغة ← تقييم ←
+            # تحسين ← تقييم. تكتمل كاملةً **قبل** السطر التالي، فما يراه
+            # البشري نصٌّ نُقّح لا مسوّدة خام.
             draft = draft_correspondence(request, memories).result()
             # الوقوف هنا: المسودة جاهزة والفعل لم يقع بعد. قيمة الاستئناف
             # (نص ``Command(resume=...)``) هي نص البشري، ويمضي كما هو.
