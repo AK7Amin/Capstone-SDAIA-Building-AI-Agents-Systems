@@ -1,234 +1,138 @@
-# المُنسِّق (Munassiq)
+# Munassiq (المُنسِّق) — Association Office Assistant
 
-**مساعد مكتب جمعية بنمط مشرف وعمّال (Supervisor + Workers) — المسار A**، مبني
-على LangChain وLangGraph ومتتبَّع بـLangSmith: مشرفٌ واحد يستقبل طلب المكتب
-ويفوّضه إلى العامل المختص — التقويم، أو المعرفة (RAG على وثائق الجمعية)، أو
-المراسلات — بذاكرةٍ قصيرة وطويلة المدى، ووقوفٍ بشري قبل أي فعلٍ لا يُعكَس.
+![tests](https://img.shields.io/badge/tests-40%20collected%20%7C%2031%20offline--green-3fb950) ![python](https://img.shields.io/badge/python-3.13-3572A5) ![langgraph](https://img.shields.io/badge/LangGraph-1.2-blue) ![checkpointer](https://img.shields.io/badge/state-SqliteSaver%20%2B%20SqliteStore-336791) ![model](https://img.shields.io/badge/LLM-Groq%20gpt--oss--120b-f55036) ![embeddings](https://img.shields.io/badge/embeddings-multilingual--MiniLM%20(local)-yellow)
 
----
+**Abdulaziz Mulia (عبدالعزيز مُليا)** — [@AK7Amin](https://github.com/AK7Amin)
 
-## بطاقة التسليم
+SDAIA Academy — *Building AI Agent Systems*, cohort **16–20 August 2026**, Riyadh.
+Capstone **Track A: Supervisor + Workers** · [SDAIA Academy on GitHub](https://github.com/SDAIAAcademy)
 
-| البند | القيمة |
-|---|---|
-| **الاسم الكامل** | _[يُملأ قبل التسليم]_ |
-| **البرنامج** | SDAIA Academy — بناء أنظمة وكلاء الذكاء الاصطناعي |
-| **فترة الدورة** | 16–20 أغسطس 2026 |
-| **أكاديمية سدايا على GitHub** | <https://github.com/SDAIAAcademy> |
-| **المسار المُعلَن** | **A** — مشرف (Supervisor) وثلاثة عمّال |
-| **المخرج الأساسي** | `munassiq_capstone.ipynb` — دليل مُشغَّل لكل قسم من أقسام التقييم الثمانية |
+A multi-agent office assistant for a non-profit association: a supervisor routes
+every request to one of three specialist workers (knowledge, calendar,
+correspondence), answers policy questions from an Arabic document base through a
+real RAG pipeline, remembers member preferences **across conversation threads**,
+and **pauses for human approval** before anything irreversible leaves the
+building — with durable state that survives a process restart.
 
-> ### ⚠️ تنويه: كل وثائق `data/corpus/` **تركيبية**
->
-> الوثائق الثلاث في `data/corpus/` (سياسة النشر، دليل المتطوعين، إجراءات
-> الفعاليات) **أُلّفت خصيصًا لهذا المشروع التدريبي**. لا تمثّل سياسة فعلية لأي
-> جهة حقيقية، ولا تصلح مرجعًا لأي قرار. وكذلك لا يقع في المشروع **إرسال بريد
-> حقيقي**: «الإرسال» كتابةٌ في صندوق صادر محلي تحت `data/outbox/`.
+> ⚠️ **All documents under `data/corpus/` are synthetic**, authored solely for
+> this training project. They represent no real organization. No real e-mail is
+> ever sent — the correspondence worker writes to a local outbox directory.
 
 ---
 
-## المعمارية
+## For the grader — where every rubric section is proven
 
-المنطق كله يسكن `src/munassiq/` فيبقى قابلًا للاختبار بـ`pytest`، والنوتبوك
-دليل تشغيل يستورد تلك الواجهات ويعرض مخرجاتها.
-
-```text
-                          user request
-                               │
-                               ▼
-        ┌──────────────────────────────────────────┐
-        │   @entrypoint  munassiq_app   (app.py)   │
-        │   glue only — every LLM call is a @task  │
-        └───┬──────────────┬───────────────────┬───┘
-            │              │                   │
-            ▼              ▼                   ▼
-     load_memories   classify_request   draft_correspondence  @task
-        @task            @task          ┌──────────────────┐
-            │              │            │ Evaluator-       │
-            │              │            │ Optimizer loop   │
-            │              │            │ draft → evaluate │
-            │              │            │  → improve       │
-            │              │            │ (max 2 rounds)   │
-            │              │            └────────┬─────────┘
-            │              │                     ▼
-            │              │                interrupt()  ◀── human review
-            │              │                     │
-            │              ▼                     ▼
-            │        run_supervisor  @task   send_final  @task
-            │              │                     │
-            │              ▼                     ▼
-            │   ┌──────────────────────┐   data/outbox/*.txt
-            │   │ supervisor  (LLM)    │   (verbatim, no model pass)
-            │   │ transfer_to_<worker> │
-            │   └──┬────────┬───────┬──┘
-            │      ▼        ▼       ▼
-            │  calendar  knowledge  correspondence
-            │   _agent    _agent      _agent
-            │      │        │            │
-            │  CALENDAR  search_    save_email_
-            │   tools    policies     draft
-            │               │
-            │        Chroma + fastembed ◀── data/corpus/*.md
-            │
-            └── memory.py:  SqliteSaver(thread_id)  +  SqliteStore(("memories", user_id))
-```
-
-**قراءة المخطط:**
-
-- **الـ`@entrypoint`** غراءٌ نقي: شرطٌ ونداءات `@task` وجمع نتائجها. كل نداء
-  نموذج وكل أثر جانبي داخل `@task`، لأن جسم الـentrypoint يُعاد تنفيذه من أوله
-  عند الاستئناف بينما نتائج الـ`@task` المكتملة تُقرأ من الـcheckpointer.
-- **العمّال الثلاثة** وكلاء ReAct كاملون، ولكلٍّ أدواته وحدها: عامل التقويم لا
-  يرى أداة البريد أصلًا — حصرٌ بالبنية لا برجاءٍ في نص التعليمات.
-- **الذاكرة نوعان**: `SqliteSaver` مفتاحه `thread_id` (حالة محادثة واحدة)،
-  وStore بفضاء أسماء `("memories", user_id)` لا يعرف الـthread أصلًا فما يُكتب
-  فيه في محادثة يُقرأ في محادثة أخرى.
-- **مسار الوقوف**: الفعل غير القابل للعكس (بريد باسم الجمعية) لا يقع إلا بعد
-  `interrupt` يعرض مسودةً **مصوغة سلفًا**، وما يعود من `Command(resume=...)`
-  يمضي **حرفيًا** إلى صندوق الصادر بلا أي مرور على نموذج.
-
----
-
-## النمطان المسمّيان صراحةً
-
-| النمط | أين | لماذا يناسب |
-|---|---|---|
-| **Orchestrator-Worker** | المشرف في `src/munassiq/supervisor.py` فوق عمّال `workers.py` | طلبات مكتب الجمعية مختلطة الطبيعة (حجز، سؤال سياسة، صياغة رسالة) ولكلٍّ أدوات مختلفة؛ فمنسِّقٌ واحد يقرأ الطلب ويفوّضه إلى المختص أدقّ من وكيلٍ واحدٍ يحمل كل الأدوات ويخلط بينها. |
-| **Evaluator-Optimizer** | حلقة المراسلات داخل `draft_correspondence` في `src/munassiq/app.py` | الرسالة الصادرة باسم الجمعية لها معيار قبولٍ يمكن النطق به (تنقل ما طُلب كاملًا، بلا زيادة، بعربية موجزة، بتحيةٍ وخاتمة) — وهذا بالضبط شرط نجاح النمط: ناقدٌ يقدر أن يقول ما يُصلَح وكيف، لا مجرد «حسّنها». |
-
----
-
-## خريطة أقسام التقييم الثمانية
-
-| # | القسم | الكود في `src/` | خلايا النوتبوك | الاختبار |
+| # | Rubric section | Implementation | Notebook section | Test |
 |---|---|---|---|---|
-| 1 | أساسيات الوكيل (أدوات + مخرج مهيكل) | `tools.py` | القسم 1 | `tests/test_tools.py` |
-| 2 | المشرف والتوجيه | `supervisor.py` · `workers.py` | القسم 2 | `tests/test_supervisor.py` |
-| 3 | RAG | `rag.py` · `workers.py` | القسم 3 | `tests/test_rag.py` |
-| 4 | الذاكرة قصيرة وطويلة المدى | `memory.py` · `app.py` | القسم 4 | `tests/test_memory.py` |
-| 5 | الوقوف البشري (interrupt/resume) | `app.py` · `tools.py` | القسم 5 | `tests/test_hitl.py` |
-| 6 | Functional API واستراتيجيتا الخطأ | `app.py` · `workers.py` | القسم 6 | `tests/test_reliability.py` |
-| 7 | النمط المسمّى (Evaluator-Optimizer) | `app.py` | القسم 7 | `tests/test_reliability.py` |
-| 8 | تتبع LangSmith | `tracing.py` · `tools/verify_trace.py` | القسم 8 | `tests/test_tracing.py` |
+| 1 | Agent fundamentals — real tool calls + structured output | `src/munassiq/tools.py` (`create_event`, `save_email_draft`, Pydantic `TriageDecision` via `with_structured_output`) | §2 | `tests/test_tools.py` |
+| 2 | Multi-agent routing — the **LLM** decides | `src/munassiq/supervisor.py` (`langgraph-supervisor`; printed `transfer_to_*` calls) | §3 | `tests/test_supervisor.py` |
+| 3 | RAG pipeline — load → split → embed → store → retrieve | `src/munassiq/rag.py` (multilingual MiniLM via fastembed, Chroma) + written 2-Step vs Agentic vs Hybrid justification | §4 | `tests/test_rag.py` |
+| 4 | Context & state — checkpointer + **separate Store**, cross-thread proof | `src/munassiq/memory.py` (`SqliteSaver` + `SqliteStore`, both on disk) | §5 | `tests/test_memory.py` |
+| 5 | Human-in-the-loop — `interrupt()` **and** `Command(resume=...)` | `src/munassiq/app.py` (pause before send; resume text used verbatim) | §6 | `tests/test_hitl.py` |
+| 6 | Functional API + ≥2 error strategies | `@task`/`@entrypoint` throughout; `RetryPolicy` (transient) + LLM-recoverable correction loop | §7 | `tests/test_reliability.py` |
+| 7 | Workflow pattern — implemented **and named** | **Evaluator-Optimizer** inside the correspondence path; the supervisor itself is **Orchestrator-Worker** | §8 | `tests/test_reliability.py` |
+| 8 | LangSmith observability | `src/munassiq/tracing.py` (guards the exact `LANGCHAIN_TRACING_V2` name; polling verifier) | §9 | `tests/test_tracing.py` |
 
-واختبار التكامل `tests/test_integration.py::test_capstone_end_to_end` يمثّل
-السيناريو كاملًا عبر الواجهات العامة، وهو الصياغة التنفيذية لمعيار نجاح
-المشروع.
+The end-to-end acceptance test is `tests/test_integration.py::test_capstone_end_to_end`.
 
----
+## Architecture
 
-## بنية المستودع
-
-```text
-munassiq/
-├── munassiq_capstone.ipynb     # النوتبوك الجامع — دليل لكل قسم تقييم
-├── src/munassiq/               # المنطق كله (قابل للاختبار)
-│   ├── config.py               # تحميل .env نسبيًا + عميل ChatGroq المشترك
-│   ├── tools.py                # أدوات التقويم والبريد + TriageDecision
-│   ├── rag.py                  # فهرسة الوثائق التركيبية وأداة البحث
-│   ├── workers.py              # العمّال الثلاثة + استراتيجيتا الخطأ
-│   ├── supervisor.py           # المشرف (transfer_to_<worker>)
-│   ├── memory.py               # SqliteSaver + SqliteStore
-│   ├── app.py                  # الـentrypoint الوظيفي الجامع
-│   └── tracing.py              # حارس اسم متغير التتبع + انتظار الـrun
-├── tests/                      # pytest — الوسم api لما يستدعي النموذج فعلًا
-├── tools/
-│   ├── leak_scan.py            # بوابة فحص التسرب قبل كل دفع
-│   └── verify_trace.py         # إثبات وصول الـtrace بلا استهلاك حصة نموذج
-├── data/corpus/                # وثائق تركيبية (انظر التنويه أعلاه)
-└── docs/                       # مسودة الـwrite-up وقائمة التسليم
+```mermaid
+flowchart TD
+    U[User request + user_id] --> EP["@entrypoint munassiq_app<br/>(SqliteSaver + SqliteStore)"]
+    EP --> LM["@task load_memories<br/>(deterministic Store injection)"]
+    EP --> DS["@task detect_and_store_memory<br/>(Pydantic MemoryCandidate)"]
+    EP --> CL["@task classify_request<br/>(Pydantic TriageDecision)"]
+    CL -->|correspondence| DC["@task draft_correspondence<br/>Evaluator-Optimizer loop"]
+    DC --> INT{{"interrupt()<br/>human approval"}}
+    INT -->|"Command(resume=text)"| SF["@task send_final<br/>verbatim → data/outbox/"]
+    CL -->|calendar / knowledge| SUP["Supervisor (Orchestrator-Worker)<br/>transfer_to_* handoffs"]
+    SUP --> W1[calendar_agent]
+    SUP --> W2[knowledge_agent → RAG]
+    SUP --> W3[correspondence_agent]
 ```
 
----
+Design rules enforced by tests: the entrypoint body is pure glue (every LLM
+call and side effect lives inside a `@task`, so nothing re-executes on resume);
+the human's resume text reaches the outbox **without passing through any
+model**; memories are injected deterministically rather than left to the
+model's discretion.
 
-## التشغيل
-
-**المتطلب**: Python 3.13، ومفتاح Groq، ومفتاح LangSmith.
+## Running it
 
 ```bash
-# 1) بيئة افتراضية
-python -m venv .venv
-source .venv/bin/activate        # على ويندوز: .venv\Scripts\activate
-
-# 2) الاعتمادات
+python -m venv .venv && .venv/Scripts/activate   # Windows
 pip install -r requirements.txt
-
-# 3) البيئة — انسخ المثال ثم املأ القيم في ‎.env (ولا تكوميته أبدًا)
-cp .env.example .env             # على ويندوز: copy .env.example .env
+copy .env.example .env                            # then fill your keys
+pytest -m "not api"                               # 31 offline tests, no quota
+pytest                                            # full suite (live Groq + LangSmith)
+jupyter notebook munassiq_capstone.ipynb          # run top-to-bottom from the repo root
 ```
 
-ثم املأ في `.env`: `GROQ_API_KEY` و`LANGSMITH_API_KEY`، وأبقِ
-`LANGCHAIN_TRACING_V2=true` و`LANGCHAIN_PROJECT`. **اسم متغير التتبع حرفيًا
-`LANGCHAIN_TRACING_V2`** — والاسم `LANGSMITH_TRACING_V2` يبدو صحيحًا ولا يشتكي
-منه أحد، لكن التتبع حينها مطفأ ولا يصل أي trace: فشلٌ صامت بلا استثناء ولا
-تحذير.
+- Model: `openai/gpt-oss-120b` on Groq (override with `MUNASSIQ_MODEL`).
+- Tracing: `LANGCHAIN_TRACING_V2=true` — note the exact name; the common
+  misspelling `LANGSMITH_TRACING_V2` fails **silently** and our config guards
+  against it.
+- Before any push: `python tools/leak_scan.py` must exit 0 (scans the raw
+  notebook and every tracked file for key patterns, absolute paths, and the
+  machine username).
 
-**النموذج**: الافتراضي `openai/gpt-oss-120b` عبر Groq (انظر «حدود معروفة»).
-ومتغير البيئة `MUNASSIQ_MODEL` يبدّله بلا تعديل كود:
+## Reliability
 
-```bash
-MUNASSIQ_MODEL=<اسم النموذج البديل> pytest -m "not api"
+| Error class | Strategy | Where |
+|---|---|---|
+| Transient (network, 5xx) | Real `RetryPolicy(max_attempts=3)` on the task — no hand-rolled sleep loops | `workers.py::fetch_external_resource` |
+| LLM-recoverable (bad tool input) | Error text fed back to the model in a correction message, bounded retries | `workers.py::run_tool_with_llm_recovery` |
+| User-fixable | `interrupt()` — the approval gate doubles as the pattern | `app.py` |
+| Unexpected | Propagate for debugging; displayed as `ExceptionType: message` only (no raw tracebacks in notebook output) | throughout |
+
+## How it was built
+
+Test-driven, in vertical slices: every slice landed as a **red commit** (the
+failing test, its first failure line in the commit message) followed by a
+**green commit** (minimal implementation). Risky assumptions were burned down
+first by throwaway spikes run against the real APIs — which is how we caught
+that the course's `llama-3.3-70b-versatile` returns 404 on this account
+(replaced with `openai/gpt-oss-120b`) and that the default English embedding
+model silently fails on Arabic text (replaced with
+`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, running locally
+via fastembed/ONNX — no key, no cost). A four-angle plan critique
+(architecture, rubric compliance, security, reliability) ran before the first
+line of implementation; its decisions are recorded in `docs/plan/`.
+
+## Repository layout
+
+```
+munassiq/
+├── munassiq_capstone.ipynb      # the graded notebook — one evidence section per rubric row
+├── src/munassiq/                # config · tools · rag · workers · supervisor · memory · app · tracing
+├── tests/                       # 40 tests; `-m "not api"` runs the 31 offline ones
+├── tools/                       # leak_scan.py (pre-push gate) · verify_trace.py
+├── data/corpus/                 # 3 synthetic Arabic policy documents (planted verbatim facts)
+├── docs/                        # WRITEUP-DRAFT.md · SUBMISSION-CHECKLIST.md · plan/ (PRD, run log, critique)
+└── requirements.txt
 ```
 
-**الاختبارات**:
+## Known limits
 
-```bash
-pytest -m "not api"    # كل ما لا يستهلك حصة نموذج — سريع وبلا شبكة تقريبًا
-pytest                 # المجموعة الكاملة، ومنها ما يستدعي Groq/LangSmith فعلًا
-```
+- **Groq free tier**: 200K tokens/day/model and 8K tokens/minute — the `api`
+  marker exists so the offline suite stays runnable when the quota is spent.
+- The evaluator loop is capped at two rounds; correspondence quality beyond
+  that is the human approver's call by design.
+- `SqliteStore` gives durable cross-thread memory on one machine; a
+  multi-instance deployment would swap in `PostgresStore` (course Day-5
+  production lesson) — see *Not built*.
 
-**النوتبوك**: افتحه من **جذر المشروع** (خلية الإعداد تتحقق من ذلك وتفشل مبكرًا
-إن شُغّل من مكان آخر)، ثم أعد تشغيل النواة ونفّذ الخلايا أعلى-لأسفل بالترتيب.
+## Not built (declared honestly)
 
-```bash
-jupyter lab munassiq_capstone.ipynb
-```
+No FastAPI serving layer, no UI, no real e-mail transport, no deployment — the
+capstone rubric does not ask for them and nothing here pretends they exist.
+The production lesson's path (durable Postgres state + `/ask`, `/approve`
+endpoints) is documented in `docs/WRITEUP-DRAFT.md` as future work.
 
----
+## License & attribution
 
-## الأمن والأسرار
-
-- **`.env` لا يُكوميت أبدًا** — مُدرج في `.gitignore` مع `.venv/` وقواعد
-  SQLite المولَّدة و`data/outbox/`. المُتتبَّع هو `.env.example` وحده، فارغ
-  القيم.
-- **لا يُطبع أي مفتاح** ولا جزءٌ منه في أي خلية أو سجل أو مخرج. وعن الـruns
-  يُطبع المعرّف والاسم والحالة فقط: لا مدخلات ولا مخرجات ولا روابط موقّعة.
-- **لا مسار مطلق في أي ملف متتبَّع** — كل مسار مشتق نسبيًا من موقع الملف عبر
-  `Path(__file__)`، لأن المسار المطلق يكشف اسم المستخدم وبنية الجهاز.
-- **بوابة فحص التسرب قبل كل دفع**:
-
-  ```bash
-  python tools/leak_scan.py
-  ```
-
-  تفحص النوتبوك الخام وكل ملف متتبَّع في git بحثًا عن أنماط المفاتيح ومسارات
-  الجهاز واسم المستخدم، وتخرج بـ`1` عند أي تطابق — بلا اقتباس القيمة المطابِقة
-  في التقرير. والبوابة نفسها مُختبَرة في `tests/test_leak_scan.py`.
-
----
-
-## حدود معروفة
-
-- **سقف Groq المجاني اليومي**: الحساب المستعمل على الطبقة المجانية، وسقف
-  الـtokens اليومي (TPD) يُحسب لكل نموذج على حدة. عند بلوغه تُرجع الخدمة `429`
-  فتتوقف الاختبارات الموسومة `api`. العلاج: انتظار تجدد الحصة، أو تبديل النموذج
-  بـ`MUNASSIQ_MODEL`، أو ترقية الحساب.
-- **الاختبارات الموسومة `api` تستدعي النموذج الحقيقي** وتستهلك من تلك الحصة —
-  ولذلك عُزلت بوسم، و`pytest -m "not api"` يمرّ بلا استهلاك. ولأن الشبكة غير
-  حتمية، وُسمت هذه الاختبارات بـ`flaky(reruns=2)` وبمهلة صريحة.
-- **نموذج الدورة `llama-3.3-70b-versatile` غير متاح على هذا الحساب** (يعيد
-  `404`)، فاستُبدل بـ`openai/gpt-oss-120b` — وهو ما جرى التطوير والاختبار عليه.
-- **التضمين متعدد اللغات إلزامًا**: موديل fastembed الافتراضي إنجليزي وفشل مع
-  العربية، والمعتمد `paraphrase-multilingual-MiniLM-L12-v2`. أول نداء تضمين قد
-  ينزّل الموديل، ولذلك دالة إحماء منفصلة عن الاسترجاع.
-- **لا خدمة ولا واجهة مستخدم**: المشروع نوتبوك + وحدات قابلة للاختبار، والنشر
-  خارج نطاقه عمدًا.
-
----
-
-## التوثيق
-
-- `docs/WRITEUP-DRAFT.md` — مسودة الـwrite-up: فقرة لكل قسم تقييم مع القرار
-  المسمّى وسببه.
-- `docs/SUBMISSION-CHECKLIST.md` — قائمة التسليم وحالة كل بند.
-- وحدات `src/munassiq/` موثَّقة بـdocstrings تشرح القرار وسببه لا الشيفرة.
+Educational capstone for SDAIA Academy. Course material:
+[Building Agentic AI Systems](https://mohammadyusif.github.io/agentic-ai-systems/)
+(Hassan Algoz, extended by Mohammad Yusif). All synthetic documents and code
+authored for this submission.

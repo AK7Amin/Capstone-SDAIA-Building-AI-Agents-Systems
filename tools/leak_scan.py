@@ -94,8 +94,17 @@ def build_patterns(username: str | None = None) -> list[tuple[str, re.Pattern[by
 
     name = detect_username() if username is None else username.strip()
     if len(name) >= MIN_USERNAME_LENGTH:
+        # حدود كلمات \b حول الاسم: المطلوب مسك «abdul» في مسار مثل
+        # C:\Users\abdul\ لا داخل اسم علم أطول مثل «Abdulaziz» — اسم صاحب
+        # المشروع مقصودٌ نشره، واسم مستخدم الجهاز وحده هو التسرب.
         patterns.append(
-            (USERNAME_LABEL, re.compile(re.escape(name.encode("utf-8")), re.IGNORECASE))
+            (
+                USERNAME_LABEL,
+                re.compile(
+                    rb"\b" + re.escape(name.encode("utf-8")) + rb"\b",
+                    re.IGNORECASE,
+                ),
+            )
         )
     return patterns
 
