@@ -35,7 +35,7 @@ from langgraph.func import entrypoint, task
 from langgraph.types import Command, interrupt  # noqa: F401  (Command يُعاد تصديره)
 from pydantic import BaseModel, Field
 
-from munassiq.config import get_llm
+from munassiq.config import get_llm, invoke_structured
 from munassiq.memory import MEMORY_NAMESPACE, build_memory
 from munassiq.tools import TriageDecision, send_approved_email, triage
 
@@ -212,7 +212,7 @@ def detect_and_store_memory(request: str, user_id: str) -> str | None:
         نص الحقيقة المكتوبة، أو ``None`` إن لم يستحق الطلب تذكّرًا.
     """
     judge = get_llm().with_structured_output(MemoryCandidate)
-    verdict = judge.invoke(
+    verdict = invoke_structured(judge, 
         [
             {"role": "system", "content": MEMORY_DETECTOR_PROMPT},
             {"role": "user", "content": request},
@@ -270,7 +270,7 @@ def evaluate_draft(request: str, draft: str) -> DraftVerdict:
     منطقي يُقرأ مباشرة، فلا يُبنى قرار الحلقة على تفتيشٍ في نصٍّ حر.
     """
     judge = get_llm().with_structured_output(DraftVerdict)
-    return judge.invoke(
+    return invoke_structured(judge, 
         [
             {"role": "system", "content": EVALUATOR_SYSTEM_PROMPT},
             {

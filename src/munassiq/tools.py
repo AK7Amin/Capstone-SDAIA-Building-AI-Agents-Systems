@@ -22,7 +22,7 @@ from typing import Literal
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from munassiq.config import get_llm
+from munassiq.config import get_llm, invoke_structured
 
 # جذر المشروع مشتق من موقع الملف: src/munassiq/tools.py -> src/munassiq -> src
 # -> الجذر. لا مسار مطلق حرفي مزروع في الكود.
@@ -139,7 +139,7 @@ TRIAGE_SYSTEM_PROMPT = (
 def triage(request: str) -> TriageDecision:
     """يصنّف طلبًا واردًا ويعيد قرار التوجيه مخرجًا مهيكلًا."""
     classifier = get_llm().with_structured_output(TriageDecision)
-    return classifier.invoke(
+    return invoke_structured(classifier, 
         [
             {"role": "system", "content": TRIAGE_SYSTEM_PROMPT},
             {"role": "user", "content": request},

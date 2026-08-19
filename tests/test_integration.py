@@ -8,11 +8,12 @@ import uuid
 
 import pytest
 
+# وسم xfail رُفع في الشريحة 9 كما نص العقد: خضرة هذا الاختبار بلا وسم
+# شرط إغلاق الحلقة (مع اختباري الشريحتين 7 و8).
 pytestmark = [
     pytest.mark.api,
     pytest.mark.timeout(300),
     pytest.mark.flaky(reruns=2, reruns_delay=30),
-    pytest.mark.xfail(reason="الميزة قيد البناء — يُرفع الوسم في الشريحة 9", strict=True),
 ]
 
 

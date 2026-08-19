@@ -1,786 +1,117 @@
-......x.......RRF..F...RRF.....RRF.RRF..........                         [100%]
+......RRF.......RR..............F...........                             [100%]
 ================================== FAILURES ===================================
-__________________ test_same_thread_keeps_short_term_context __________________
+__________________________ test_capstone_end_to_end ___________________________
 
-tmp_path = WindowsPath('C:/Users/abdul/AppData/Local/Temp/pytest-of-abdul/pytest-356/test_same_thread_keeps_short_t2')
-
-    @pytest.mark.api
-    @pytest.mark.flaky(reruns=2, reruns_delay=30)
-    def test_same_thread_keeps_short_term_context(tmp_path):
-        """ﬁˆ’— «·„œÏ: ‰œ«¡«‰ »‰›” thread_id° Ê«·À«‰Ì ÌÃœ √À— «·√Ê· ›Ì «·‹checkpointer."""
-        app, _checkpointer, _store = _reset_and_build(tmp_path)
+    def test_capstone_end_to_end():
+        try:
+            from munassiq.app import munassiq_app
+            from munassiq.memory import build_memory
+            from munassiq.rag import build_retriever
+            from munassiq.supervisor import build_supervisor
+        except ImportError:
+            pytest.fail("«·„Ì“… €«∆»…: Õ“„… munassiq ·„  ı»‰Û »⁄œ")
     
-        config = {"configurable": {"thread_id": "thread-short"}}
+        checkpointer, store = build_memory()
     
->       first = app.invoke(
-            {"request": "„« «·„Ê«⁄Ìœ «·„”Ã¯·… ›Ì «· ﬁÊÌ„ø", "user_id": "member-002"},
-            config,
-        )
-
-tests\test_memory.py:101: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:344: in tick
-    _panic_or_proceed(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:687: in _panic_or_proceed
-    raise exc
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
-    task.result()
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\app.py:467: in munassiq_app
-    reply = run_supervisor(request, memories, history).result()
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:460: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
-    task.result()
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:223: in next_tick
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\app.py:403: in run_supervisor
-    return _last_text(_get_supervisor().invoke({"messages": messages}))
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
-    run_with_retry(
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
-    run_with_retry(
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:440: in invoke
-    ret = context.run(self.func, *args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\chat_agent_executor.py:679: in call_model
-    response = cast(AIMessage, static_model.invoke(model_input, config))  # type: ignore[union-attr]
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\runnables\base.py:3444: in invoke
-    input_ = context.run(step.invoke, input_, config)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\runnables\base.py:6002: in invoke
-    return self.bound.invoke(
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:477: in invoke
-    self.generate_prompt(
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:1866: in generate_prompt
-    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:1673: in generate
-    self._generate_with_cache(
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:2011: in _generate_with_cache
-    result = self._generate(
-.venv\Lib\site-packages\langchain_groq\chat_models.py:627: in _generate
-    response = self.client.create(messages=message_dicts, **params)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\groq\resources\chat\completions.py:461: in create
-    return self._post(
-.venv\Lib\site-packages\groq\_base_client.py:1242: in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-self = <groq.Groq object at 0x000001FECC0E34D0>
-cast_to = <class 'groq.types.chat.chat_completion.ChatCompletion'>
-options = FinalRequestOptions(method='post', url='/openai/v1/chat/completions', params={}, headers=NOT_GIVEN, max_retries=NOT_GI...ption': "Ask agent 'calendar_agent' for help", 'parameters': {'properties': {}, 'type': 'object'}}}]}, extra_json=None)
-stream = False
-stream_cls = groq.Stream[groq.types.chat.chat_completion_chunk.ChatCompletionChunk]
-
-    def request(
-        self,
-        cast_to: Type[ResponseT],
-        options: FinalRequestOptions,
-        *,
-        stream: bool = False,
-        stream_cls: type[_StreamT] | None = None,
-    ) -> ResponseT | _StreamT:
-        cast_to = self._maybe_override_cast_to(cast_to, options)
-    
-        # create a copy of the options we were given so that if the
-        # options are mutated later & we then retry, the retries are
-        # given the original options
-        input_options = model_copy(options)
-        if input_options.idempotency_key is None and input_options.method.lower() != "get":
-            # ensure the idempotency key is reused between requests
-            input_options.idempotency_key = self._idempotency_key()
-    
-        response: httpx.Response | None = None
-        max_retries = input_options.get_max_retries(self.max_retries)
-    
-        retries_taken = 0
-        for retries_taken in range(max_retries + 1):
-            options = model_copy(input_options)
-            options = self._prepare_options(options)
-    
-            remaining_retries = max_retries - retries_taken
-            request = self._build_request(options, retries_taken=retries_taken)
-            self._prepare_request(request)
-    
-            kwargs: HttpxSendArgs = {}
-            if self.custom_auth is not None:
-                kwargs["auth"] = self.custom_auth
-    
-            if options.follow_redirects is not None:
-                kwargs["follow_redirects"] = options.follow_redirects
-    
-            log.debug("Sending HTTP Request: %s %s", request.method, request.url)
-    
-            response = None
-            try:
-                response = self._client.send(
-                    request,
-                    stream=stream or self._should_stream_response_body(request=request),
-                    **kwargs,
-                )
-            except httpx.TimeoutException as err:
-                log.debug("Encountered httpx.TimeoutException", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising timeout error")
-                raise APITimeoutError(request=request) from err
-            except Exception as err:
-                log.debug("Encountered Exception", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising connection error")
-                raise APIConnectionError(request=request) from err
-    
-            log.debug(
-                'HTTP Response: %s %s "%i %s" %s',
-                request.method,
-                request.url,
-                response.status_code,
-                response.reason_phrase,
-                response.headers,
-            )
-    
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as err:  # thrown on 4xx and 5xx status code
-                log.debug("Encountered httpx.HTTPStatusError", exc_info=True)
-    
-                if remaining_retries > 0 and self._should_retry(err.response):
-                    err.response.close()
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=response,
-                    )
-                    continue
-    
-                # If the response is streamed then we need to explicitly read the response
-                # to completion before attempting to access the response text.
-                if not err.response.is_closed:
-                    err.response.read()
-    
-                log.debug("Re-raising status error")
->               raise self._make_status_error_from_response(err.response) from None
-E               groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01kzt5synfewktcxd73nwgb9qh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199633, Requested 750. Please try again in 2m45.456s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-E               During task with name 'agent' and id '636ff1bf-695f-0bf2-0774-c0615c8ebc33'
-E               During task with name 'supervisor' and id '12c1b80c-07ed-a4cf-e9b0-53f88326e152'
-E               During task with name 'run_supervisor' and id 'c1bcc1bc-03a2-53ed-2296-cdebb5fa46a4'
-E               During task with name 'munassiq_app' and id '6dd07b90-b246-0482-2e0b-0458deb0abef'
-
-.venv\Lib\site-packages\groq\_base_client.py:1044: RateLimitError
-______________ test_knowledge_tool_returns_passages_with_source _______________
-
-    def test_knowledge_tool_returns_passages_with_source():
-        """√œ«… search_policies  ⁄Ìœ ‰’ «·„ﬁ«ÿ⁄ Ê„’œ—Â« ó »·« √Ì ‰œ«¡ ‘»ﬂ…."""
-        from munassiq.rag import build_knowledge_tool
-    
-        tool = build_knowledge_tool()
-        assert tool.name == "search_policies", (
-            f"«”„ «·√œ«… ·Ì” search_policies »· {tool.name!r} ó "
-            "«·⁄«„· Ì” œ⁄ÌÂ« »«·«”„"
-        )
-    
->       answer = tool.invoke({"query": "ﬂ„ „œ… „—«Ã⁄… «·„Õ ÊÏ ﬁ»· «·‰‘—ø"})
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-tests\test_rag.py:89: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-.venv\Lib\site-packages\langchain_core\tools\base.py:766: in invoke
-    return self.run(tool_input, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\tools\base.py:1134: in run
-    raise error_to_raise
-.venv\Lib\site-packages\langchain_core\tools\base.py:1100: in run
-    response = context.run(self._run, *tool_args, **tool_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\tools\structured.py:97: in _run
-    return self.func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\rag.py:154: in search_policies
-    return format_passages(_shared_retriever().invoke(query))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\retrievers.py:222: in invoke
-    result = self._get_relevant_documents(
-.venv\Lib\site-packages\langchain_core\vectorstores\base.py:1045: in _get_relevant_documents
-    docs = self.vectorstore.similarity_search(query, **kwargs_)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:748: in similarity_search
-    docs_and_scores = self.similarity_search_with_score(
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:849: in similarity_search_with_score
-    results = self.__query_collection(
-.venv\Lib\site-packages\langchain_core\utils\utils.py:51: in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:477: in __query_collection
-    return self._collection.query(
-.venv\Lib\site-packages\chromadb\api\models\Collection.py:265: in query
-    query_results = self._client._query(
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-self = <chromadb.api.rust.RustBindingsAPI object at 0x000001FEC99C7620>
-collection_id = UUID('55d3c67d-71f3-4c78-a126-b18458225e88')
-query_embeddings = [array([-8.43442306e-02, -2.75751743e-02, -1.22459412e-01, -3.31823349e-01,
-        6.82678223e-02,  1.56384155e-01, -...-01,  1.08004250e-01,
-       -1.07828772e-03, -2.08317116e-01,  6.86848983e-02, -4.18345124e-04],
-      dtype=float32)]
-ids = None, n_results = 3, where = None, where_document = None
-include = ['metadatas', 'documents', 'distances'], tenant = 'default_tenant'
-database = 'default_database'
-
-    @override
-    def _query(
-        self,
-        collection_id: UUID,
-        query_embeddings: Embeddings,
-        ids: Optional[IDs] = None,
-        n_results: int = 10,
-        where: Optional[Where] = None,
-        where_document: Optional[WhereDocument] = None,
-        include: Include = IncludeMetadataDocumentsDistances,
-        tenant: str = DEFAULT_TENANT,
-        database: str = DEFAULT_DATABASE,
-    ) -> QueryResult:
-        query_amount = len(query_embeddings)
-        filtered_ids_amount = len(ids) if ids else 0
-        self.product_telemetry_client.capture(
-            CollectionQueryEvent(
-                collection_uuid=str(collection_id),
-                query_amount=query_amount,
-                filtered_ids_amount=filtered_ids_amount,
-                n_results=n_results,
-                with_metadata_filter=query_amount if where is not None else 0,
-                with_document_filter=query_amount if where_document is not None else 0,
-                include_metadatas=query_amount if "metadatas" in include else 0,
-                include_documents=query_amount if "documents" in include else 0,
-                include_uris=query_amount if "uris" in include else 0,
-                include_distances=query_amount if "distances" in include else 0,
-            )
-        )
-    
->       rust_response = self.bindings.query(
-            str(collection_id),
-            ids,
-            query_embeddings,
-            n_results,
-            json.dumps(where) if where else None,
-            json.dumps(where_document) if where_document else None,
-            include,
-            tenant,
-            database,
-        )
-E       chromadb.errors.NotFoundError: Error getting collection: Collection [55d3c67d-71f3-4c78-a126-b18458225e88] does not exist.
-
-.venv\Lib\site-packages\chromadb\api\rust.py:582: NotFoundError
-________________ test_knowledge_agent_answers_from_the_corpus _________________
-
-    @pytest.mark.api
-    @pytest.mark.flaky(reruns=2, reruns_delay=30)
-    def test_knowledge_agent_answers_from_the_corpus():
-        """⁄«„· «·„⁄—›… ÌÃÌ» ”ƒ«· «·„œ… „‰ «·„ﬁ«ÿ⁄ ó  ”«„Õ ›Ì «·’Ì«€…."""
-        from munassiq.workers import build_knowledge_agent
-    
->       result = build_knowledge_agent().invoke(
-            {"messages": [{"role": "user", "content": "ﬂ„ „œ… „—«Ã⁄… «·„Õ ÊÏ ﬁ»· «·‰‘—ø"}]}
-        )
-
-tests\test_rag.py:128: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
-    run_with_retry(
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:822: in _func
-    outputs = list(
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:625: in result_iterator
-    yield _result_or_cancel(fs.pop())
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:318: in _result_or_cancel
-    return fut.result(timeout)
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:460: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\runnables\config.py:650: in _wrapped_fn
-    return contexts.pop().run(fn, *args)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:1046: in _run_one
-    return self._execute_tool_sync(tool_request, input_type, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:1006: in _execute_tool_sync
-    content = _handle_tool_error(e, flag=self._handle_tool_errors)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:434: in _handle_tool_error
-    content = flag(e)  # type: ignore [assignment, call-arg]
-              ^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:391: in _default_handle_tool_errors
-    raise e
-.venv\Lib\site-packages\langgraph\prebuilt\tool_node.py:958: in _execute_tool_sync
-    response = tool.invoke(call_args, config)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\tools\base.py:766: in invoke
-    return self.run(tool_input, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\tools\base.py:1134: in run
-    raise error_to_raise
-.venv\Lib\site-packages\langchain_core\tools\base.py:1100: in run
-    response = context.run(self._run, *tool_args, **tool_kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\tools\structured.py:97: in _run
-    return self.func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\rag.py:154: in search_policies
-    return format_passages(_shared_retriever().invoke(query))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\retrievers.py:222: in invoke
-    result = self._get_relevant_documents(
-.venv\Lib\site-packages\langchain_core\vectorstores\base.py:1045: in _get_relevant_documents
-    docs = self.vectorstore.similarity_search(query, **kwargs_)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:748: in similarity_search
-    docs_and_scores = self.similarity_search_with_score(
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:849: in similarity_search_with_score
-    results = self.__query_collection(
-.venv\Lib\site-packages\langchain_core\utils\utils.py:51: in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_chroma\vectorstores.py:477: in __query_collection
-    return self._collection.query(
-.venv\Lib\site-packages\chromadb\api\models\Collection.py:265: in query
-    query_results = self._client._query(
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-self = <chromadb.api.rust.RustBindingsAPI object at 0x000001FEC99C7620>
-collection_id = UUID('55d3c67d-71f3-4c78-a126-b18458225e88')
-query_embeddings = [array([-1.58996582e-01,  1.27777103e-02, -1.16940305e-01, -2.18607336e-01,
-        1.21630862e-01,  2.10797116e-01, -...-01,  1.43136591e-01,
-        4.79904190e-02, -2.78936774e-01,  7.34558105e-02,  6.56127930e-02],
-      dtype=float32)]
-ids = None, n_results = 3, where = None, where_document = None
-include = ['metadatas', 'documents', 'distances'], tenant = 'default_tenant'
-database = 'default_database'
-
-    @override
-    def _query(
-        self,
-        collection_id: UUID,
-        query_embeddings: Embeddings,
-        ids: Optional[IDs] = None,
-        n_results: int = 10,
-        where: Optional[Where] = None,
-        where_document: Optional[WhereDocument] = None,
-        include: Include = IncludeMetadataDocumentsDistances,
-        tenant: str = DEFAULT_TENANT,
-        database: str = DEFAULT_DATABASE,
-    ) -> QueryResult:
-        query_amount = len(query_embeddings)
-        filtered_ids_amount = len(ids) if ids else 0
-        self.product_telemetry_client.capture(
-            CollectionQueryEvent(
-                collection_uuid=str(collection_id),
-                query_amount=query_amount,
-                filtered_ids_amount=filtered_ids_amount,
-                n_results=n_results,
-                with_metadata_filter=query_amount if where is not None else 0,
-                with_document_filter=query_amount if where_document is not None else 0,
-                include_metadatas=query_amount if "metadatas" in include else 0,
-                include_documents=query_amount if "documents" in include else 0,
-                include_uris=query_amount if "uris" in include else 0,
-                include_distances=query_amount if "distances" in include else 0,
-            )
-        )
-    
->       rust_response = self.bindings.query(
-            str(collection_id),
-            ids,
-            query_embeddings,
-            n_results,
-            json.dumps(where) if where else None,
-            json.dumps(where_document) if where_document else None,
-            include,
-            tenant,
-            database,
-        )
-E       chromadb.errors.NotFoundError: Error getting collection: Collection [55d3c67d-71f3-4c78-a126-b18458225e88] does not exist.
-E       During task with name 'tools' and id 'ed9e6ffc-ce98-8360-5ea5-f4f3cea07715'
-
-.venv\Lib\site-packages\chromadb\api\rust.py:582: NotFoundError
-______________________ test_llm_recovery_with_real_model ______________________
-
-    @pytest.mark.api
-    @pytest.mark.timeout(300)
-    @pytest.mark.flaky(reruns=2, reruns_delay=30)
-    def test_llm_recovery_with_real_model():
-        """«· ’ÕÌÕ »‰„Ê–Ã ÕﬁÌﬁÌ: «·√œ«…  —›÷ «·„œŒ·° Ê«·‰„Ê–Ã Ìﬁ—√ «·Œÿ√ ›Ì’ÕÕ.
-    
-        ﬁ«∆„… «·„ﬁ»Ê· **€«∆»…** ⁄‰ «· ⁄·Ì„«  ⁄„œ«: «·”»Ì· «·ÊÕÌœ ≈·Ï «·„œŒ·
-        «·’ÕÌÕ ÂÊ ‰’ «·Œÿ√ «·⁄«∆œ „‰ «·√œ«…° ›·Ê „—¯ «·«Œ »«— ›ﬁœ À»  √‰ «·—”«·…
-        «· ’ÕÌÕÌ… ÂÌ „« √‰ﬁ– «·‰œ«¡ ·« „⁄—›… «·‰„Ê–Ã «·„”»ﬁ….
-        """
-        allowed = ("SAT-2026-08-22", "SUN-2026-08-23")
-    
-        def strict_tool(slot: str) -> str:
-            if slot not in allowed:
-                raise ValueError(
-                    f"«·—„“ ´{slot}ª €Ì— „ÊÃÊœ∫ «·—„Ê“ «·„ «Õ…: {', '.join(allowed)}"
-                )
-            return f"ÕıÃ“ «·„Ê⁄œ {slot}."
-    
->       outcome = run_reliability_task(
-            run_tool_with_llm_recovery,
-            "«ÕÃ“ „Ê⁄œ ›⁄«·Ì… «·”» . √Œ—Ã —„“ «·„Ê⁄œ ÊÕœÂ »·« √Ì ‘—Õ.",
-            tool=strict_tool,
-        )
-
-tests\test_reliability.py:353: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-src\munassiq\workers.py:252: in run_reliability_task
-    return _runner.invoke({}, {"configurable": {"thread_id": "reliability-run"}})
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:344: in tick
-    _panic_or_proceed(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:687: in _panic_or_proceed
-    raise exc
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
-    task.result()
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\workers.py:250: in _runner
-    return task_fn(*args, **kwargs).result()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:460: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
-    task.result()
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
-    raise self._exception
-C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_executor.py:223: in next_tick
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\workers.py:206: in run_tool_with_llm_recovery
-    tool_input = invoke_model(messages)
-                 ^^^^^^^^^^^^^^^^^^^^^^
-src\munassiq\workers.py:229: in _default_tool_input_model
-    content = get_llm().invoke(messages).content
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:477: in invoke
-    self.generate_prompt(
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:1866: in generate_prompt
-    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:1673: in generate
-    self._generate_with_cache(
-.venv\Lib\site-packages\langchain_core\language_models\chat_models.py:2011: in _generate_with_cache
-    result = self._generate(
-.venv\Lib\site-packages\langchain_groq\chat_models.py:627: in _generate
-    response = self.client.create(messages=message_dicts, **params)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\groq\resources\chat\completions.py:461: in create
-    return self._post(
-.venv\Lib\site-packages\groq\_base_client.py:1242: in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-self = <groq.Groq object at 0x000001FEDF4935F0>
-cast_to = <class 'groq.types.chat.chat_completion.ChatCompletion'>
-options = FinalRequestOptions(method='post', url='/openai/v1/chat/completions', params={}, headers=NOT_GIVEN, max_retries=NOT_GI...ning_format': None, 'service_tier': 'on_demand', 'stop': None, 'stream': False, 'temperature': 1e-08}, extra_json=None)
-stream = False
-stream_cls = groq.Stream[groq.types.chat.chat_completion_chunk.ChatCompletionChunk]
-
-    def request(
-        self,
-        cast_to: Type[ResponseT],
-        options: FinalRequestOptions,
-        *,
-        stream: bool = False,
-        stream_cls: type[_StreamT] | None = None,
-    ) -> ResponseT | _StreamT:
-        cast_to = self._maybe_override_cast_to(cast_to, options)
-    
-        # create a copy of the options we were given so that if the
-        # options are mutated later & we then retry, the retries are
-        # given the original options
-        input_options = model_copy(options)
-        if input_options.idempotency_key is None and input_options.method.lower() != "get":
-            # ensure the idempotency key is reused between requests
-            input_options.idempotency_key = self._idempotency_key()
-    
-        response: httpx.Response | None = None
-        max_retries = input_options.get_max_retries(self.max_retries)
-    
-        retries_taken = 0
-        for retries_taken in range(max_retries + 1):
-            options = model_copy(input_options)
-            options = self._prepare_options(options)
-    
-            remaining_retries = max_retries - retries_taken
-            request = self._build_request(options, retries_taken=retries_taken)
-            self._prepare_request(request)
-    
-            kwargs: HttpxSendArgs = {}
-            if self.custom_auth is not None:
-                kwargs["auth"] = self.custom_auth
-    
-            if options.follow_redirects is not None:
-                kwargs["follow_redirects"] = options.follow_redirects
-    
-            log.debug("Sending HTTP Request: %s %s", request.method, request.url)
-    
-            response = None
-            try:
-                response = self._client.send(
-                    request,
-                    stream=stream or self._should_stream_response_body(request=request),
-                    **kwargs,
-                )
-            except httpx.TimeoutException as err:
-                log.debug("Encountered httpx.TimeoutException", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising timeout error")
-                raise APITimeoutError(request=request) from err
-            except Exception as err:
-                log.debug("Encountered Exception", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising connection error")
-                raise APIConnectionError(request=request) from err
-    
-            log.debug(
-                'HTTP Response: %s %s "%i %s" %s',
-                request.method,
-                request.url,
-                response.status_code,
-                response.reason_phrase,
-                response.headers,
-            )
-    
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as err:  # thrown on 4xx and 5xx status code
-                log.debug("Encountered httpx.HTTPStatusError", exc_info=True)
-    
-                if remaining_retries > 0 and self._should_retry(err.response):
-                    err.response.close()
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=response,
-                    )
-                    continue
-    
-                # If the response is streamed then we need to explicitly read the response
-                # to completion before attempting to access the response text.
-                if not err.response.is_closed:
-                    err.response.read()
-    
-                log.debug("Re-raising status error")
->               raise self._make_status_error_from_response(err.response) from None
-E               groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01kzt5synfewktcxd73nwgb9qh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199997, Requested 530. Please try again in 3m47.664s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-E               During task with name 'run_tool_with_llm_recovery' and id '74ed3fa1-73f6-210f-3b8e-502bad21cb7e'
-E               During task with name '_runner' and id 'd163cc7b-b8e9-776f-bba9-296bf9044d59'
-
-.venv\Lib\site-packages\groq\_base_client.py:1044: RateLimitError
-________________________ test_llm_routes_via_transfer _________________________
-
-    @pytest.mark.api
-    @pytest.mark.flaky(reruns=2, reruns_delay=30)
-    def test_llm_routes_via_transfer():
-        from munassiq.supervisor import build_supervisor
-    
->       result = build_supervisor().invoke(
+        # 1+2 ó «·„‘—› ÌÊÃ¯Â »ﬁ—«— «·‰„Ê–Ã: œ·Ì· transfer_to_*
+        supervisor = build_supervisor()
+        result = supervisor.invoke(
             {"messages": [{"role": "user", "content": "«ÕÃ“ «Ã „«⁄ ·Ã‰… «·„Õ ÊÏ ÌÊ„ «·À·«À«¡"}]}
         )
+        handoffs = [
+            tc["name"]
+            for m in result["messages"]
+            for tc in (getattr(m, "tool_calls", None) or [])
+        ]
+        assert any(h.startswith("transfer_to_") for h in handoffs), (
+            "·« œ·Ì· √‰ «·‰„Ê–Ã ÂÊ „‰ ÊÃ¯Â ó ·« ‰œ«¡ transfer_to_* ›Ì «·—”«∆·"
+        )
+    
+        # 3 ó RAG: ”ƒ«· ≈Ã«» Â Õ—›Ì… ›Ì «·ÊÀ«∆ﬁ «· —ﬂÌ»Ì…
+        retriever = build_retriever()
+        docs = retriever.invoke("ﬂ„ „œ… „—«Ã⁄… «·„Õ ÊÏ ﬁ»· «·‰‘—ø")
+        assert docs, "«·„” —Ãˆ⁄ √⁄«œ ·« ‘Ì¡ ó Œÿ RAG „ﬂ”Ê—"
+        assert any("À·«À… √Ì«„ ⁄„·" in d.page_content for d in docs), (
+            "«·ÕﬁÌﬁ… «·Õ—›Ì… «·„“—Ê⁄… ›Ì «·ÊÀ«∆ﬁ ·„  ı” —ÃÛ⁄"
+        )
+    
+        # 4 ó –«ﬂ—… ÿÊÌ·… «·„œÏ ⁄»— «·‹ threads: «· √ﬂÌœ «·’·» ⁄·Ï «·‹ Store „»«‘—…
+        # (‰’ ÃÊ«» «·‰„Ê–Ã œ·Ì·ı ‰Ê »Êﬂ ·« »Ê«»…ı «Œ »«— ó ﬁ—«— ‰ﬁœ «·ÃÊ·… 1)
+        user_id = "member-001"
+        t1 = {"configurable": {"thread_id": f"t1-{uuid.uuid4().hex[:6]}"}}
+        t2 = {"configurable": {"thread_id": f"t2-{uuid.uuid4().hex[:6]}"}}
+>       munassiq_app.invoke(
+            {"request": " –ﬂ¯— √‰ «·ÌÊ„ «·„›÷· ·«Ã „«⁄« ‰« ÂÊ «·Œ„Ì”", "user_id": user_id},
+            t1,
+        )
 
-tests\test_supervisor.py:39: 
+tests\test_integration.py:58: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 .venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
     for chunk in self.stream(
 .venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
     for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
-    run_with_retry(
+.venv\Lib\site-packages\langgraph\pregel\_runner.py:344: in tick
+    _panic_or_proceed(
+.venv\Lib\site-packages\langgraph\pregel\_runner.py:687: in _panic_or_proceed
+    raise exc
+.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
+    task.result()
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
+    raise self._exception
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
     return task.proc.invoke(task.input, config)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
     input = context.run(step.invoke, input, config, **kwargs)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\pregel\main.py:3913: in invoke
-    for chunk in self.stream(
-.venv\Lib\site-packages\langgraph\pregel\main.py:2967: in stream
-    for _ in runner.tick(
-.venv\Lib\site-packages\langgraph\pregel\_runner.py:207: in tick
-    run_with_retry(
+.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\munassiq\app.py:443: in munassiq_app
+    decision = classify_request(request).result()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:460: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
+    raise self._exception
+.venv\Lib\site-packages\langgraph\pregel\_executor.py:80: in done
+    task.result()
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:453: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\_base.py:402: in __get_result
+    raise self._exception
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\langgraph\pregel\_executor.py:223: in next_tick
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
 .venv\Lib\site-packages\langgraph\pregel\_retry.py:617: in run_with_retry
     return task.proc.invoke(task.input, config)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .venv\Lib\site-packages\langgraph\_internal\_runnable.py:707: in invoke
     input = context.run(step.invoke, input, config, **kwargs)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\_internal\_runnable.py:440: in invoke
-    ret = context.run(self.func, *args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langgraph\prebuilt\chat_agent_executor.py:679: in call_model
-    response = cast(AIMessage, static_model.invoke(model_input, config))  # type: ignore[union-attr]
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\langchain_core\runnables\base.py:3444: in invoke
-    input_ = context.run(step.invoke, input_, config)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\langgraph\_internal\_runnable.py:447: in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\munassiq\app.py:239: in classify_request
+    return triage(request)
+           ^^^^^^^^^^^^^^^
+src\munassiq\tools.py:142: in triage
+    return classifier.invoke(
+.venv\Lib\site-packages\langchain_core\runnables\base.py:3442: in invoke
+    input_ = context.run(step.invoke, input_, config, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .venv\Lib\site-packages\langchain_core\runnables\base.py:6002: in invoke
     return self.bound.invoke(
 .venv\Lib\site-packages\langchain_core\language_models\chat_models.py:477: in invoke
@@ -792,133 +123,62 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     self._generate_with_cache(
 .venv\Lib\site-packages\langchain_core\language_models\chat_models.py:2011: in _generate_with_cache
     result = self._generate(
-.venv\Lib\site-packages\langchain_groq\chat_models.py:627: in _generate
-    response = self.client.create(messages=message_dicts, **params)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.venv\Lib\site-packages\groq\resources\chat\completions.py:461: in create
-    return self._post(
-.venv\Lib\site-packages\groq\_base_client.py:1242: in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\langchain_openai\chat_models\base.py:1820: in _generate
+    raise e
+.venv\Lib\site-packages\langchain_openai\chat_models\base.py:1776: in _generate
+    response = raw_response.parse()
+               ^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\openai\_legacy_response.py:140: in parse
+    parsed = self._options.post_parser(parsed)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\openai\resources\chat\completions\completions.py:187: in parser
+    return _parse_chat_completion(
+.venv\Lib\site-packages\openai\lib\_parsing\_completions.py:146: in parse_chat_completion
+    "parsed": maybe_parse_content(
+.venv\Lib\site-packages\openai\lib\_parsing\_completions.py:196: in maybe_parse_content
+    return _parse_content(response_format, message.content)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\openai\lib\_parsing\_completions.py:245: in _parse_content
+    return cast(ResponseFormatT, model_parse_json(response_format, content))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
-self = <groq.Groq object at 0x000001FEDF4B5180>
-cast_to = <class 'groq.types.chat.chat_completion.ChatCompletion'>
-options = FinalRequestOptions(method='post', url='/openai/v1/chat/completions', params={}, headers=NOT_GIVEN, max_retries=NOT_GI...ption': "Ask agent 'calendar_agent' for help", 'parameters': {'properties': {}, 'type': 'object'}}}]}, extra_json=None)
-stream = False
-stream_cls = groq.Stream[groq.types.chat.chat_completion_chunk.ChatCompletionChunk]
+model = <class 'munassiq.tools.TriageDecision'>, data = '-2.0'
 
-    def request(
-        self,
-        cast_to: Type[ResponseT],
-        options: FinalRequestOptions,
-        *,
-        stream: bool = False,
-        stream_cls: type[_StreamT] | None = None,
-    ) -> ResponseT | _StreamT:
-        cast_to = self._maybe_override_cast_to(cast_to, options)
-    
-        # create a copy of the options we were given so that if the
-        # options are mutated later & we then retry, the retries are
-        # given the original options
-        input_options = model_copy(options)
-        if input_options.idempotency_key is None and input_options.method.lower() != "get":
-            # ensure the idempotency key is reused between requests
-            input_options.idempotency_key = self._idempotency_key()
-    
-        response: httpx.Response | None = None
-        max_retries = input_options.get_max_retries(self.max_retries)
-    
-        retries_taken = 0
-        for retries_taken in range(max_retries + 1):
-            options = model_copy(input_options)
-            options = self._prepare_options(options)
-    
-            remaining_retries = max_retries - retries_taken
-            request = self._build_request(options, retries_taken=retries_taken)
-            self._prepare_request(request)
-    
-            kwargs: HttpxSendArgs = {}
-            if self.custom_auth is not None:
-                kwargs["auth"] = self.custom_auth
-    
-            if options.follow_redirects is not None:
-                kwargs["follow_redirects"] = options.follow_redirects
-    
-            log.debug("Sending HTTP Request: %s %s", request.method, request.url)
-    
-            response = None
-            try:
-                response = self._client.send(
-                    request,
-                    stream=stream or self._should_stream_response_body(request=request),
-                    **kwargs,
-                )
-            except httpx.TimeoutException as err:
-                log.debug("Encountered httpx.TimeoutException", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising timeout error")
-                raise APITimeoutError(request=request) from err
-            except Exception as err:
-                log.debug("Encountered Exception", exc_info=True)
-    
-                if remaining_retries > 0:
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=None,
-                    )
-                    continue
-    
-                log.debug("Raising connection error")
-                raise APIConnectionError(request=request) from err
-    
-            log.debug(
-                'HTTP Response: %s %s "%i %s" %s',
-                request.method,
-                request.url,
-                response.status_code,
-                response.reason_phrase,
-                response.headers,
-            )
-    
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as err:  # thrown on 4xx and 5xx status code
-                log.debug("Encountered httpx.HTTPStatusError", exc_info=True)
-    
-                if remaining_retries > 0 and self._should_retry(err.response):
-                    err.response.close()
-                    self._sleep_for_retry(
-                        retries_taken=retries_taken,
-                        max_retries=max_retries,
-                        options=input_options,
-                        response=response,
-                    )
-                    continue
-    
-                # If the response is streamed then we need to explicitly read the response
-                # to completion before attempting to access the response text.
-                if not err.response.is_closed:
-                    err.response.read()
-    
-                log.debug("Re-raising status error")
->               raise self._make_status_error_from_response(err.response) from None
-E               groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01kzt5synfewktcxd73nwgb9qh` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199811, Requested 336. Please try again in 1m3.504s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-E               During task with name 'agent' and id '81e8fbaa-7920-3a97-568e-32143888ee7f'
-E               During task with name 'supervisor' and id 'f490fc87-07b1-f035-b567-d51ef00af7d3'
+    def model_parse_json(model: type[_ModelT], data: str | bytes) -> _ModelT:
+        if PYDANTIC_V1:
+            return model.parse_raw(data)  # pyright: ignore[reportDeprecated]
+>       return model.model_validate_json(data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TriageDecision
+E         Input should be an object [type=model_type, input_value=-2.0, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/model_type
+E       During task with name 'classify_request' and id '47b57918-9968-359d-c62e-c7c798dc3e6a'
+E       During task with name 'munassiq_app' and id '33e9882b-1e7c-b42b-832b-b9f561cfbad6'
 
-.venv\Lib\site-packages\groq\_base_client.py:1044: RateLimitError
+.venv\Lib\site-packages\openai\_compat.py:178: ValidationError
+_________________________ test_env_and_corpus_guarded _________________________
+
+    def test_env_and_corpus_guarded():
+        # 1) «·»Ì∆… „Õ„¯·… («·„› «Õ«‰ €Ì— ›«—€Ì‰) ó œÊ‰ ÿ»«⁄… √Ì ﬁÌ„….
+        assert os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY €«∆» „‰ «·»Ì∆… »⁄œ  Õ„Ì· config"
+        assert os.environ.get(
+            "LANGSMITH_API_KEY"
+        ), "LANGSMITH_API_KEY €«∆» „‰ «·»Ì∆… »⁄œ  Õ„Ì· config"
+        assert os.environ.get("LANGCHAIN_TRACING_V2"), "LANGCHAIN_TRACING_V2 €«∆» „‰ «·»Ì∆…"
+        assert os.environ.get("LANGCHAIN_PROJECT"), "LANGCHAIN_PROJECT €«∆» „‰ «·»Ì∆…"
+    
+        # 2) get_llm() Ì»‰Ì ChatGroq »«·„Ê«’›«  «·„ÿ·Ê»… ó »‰«¡ «·ﬂ«∆‰ ·« Ì ’· »«·‘»ﬂ….
+        from langchain_groq import ChatGroq
+    
+        from munassiq.config import get_llm
+    
+        llm = get_llm()
+>       assert isinstance(llm, ChatGroq)
+E       AssertionError: assert False
+E        +  where False = isinstance(ChatOpenAI(metadata={'lc_versions': {'langchain-core': '1.5.6', 'langchain': '1.3.15', 'langchain-openai': '1.5.2'}}, ...***'), openai_api_base='https://openrouter.ai/api/v1', request_timeout=60.0, max_retries=2, stream_chunk_timeout=120.0), <class 'langchain_groq.chat_models.ChatGroq'>)
+
+tests\test_scaffold.py:24: AssertionError
 ============================== warnings summary ===============================
 src\munassiq\rag.py:27
   C:\Users\abdul\Desktop\Islamic Content Association\SDAIA Building AI Agents Systems\munassiq\src\munassiq\rag.py:27: DeprecationWarning: `langchain-community` is being sunset and is no longer actively maintained. See https://github.com/langchain-ai/langchain-community/issues/674 for details and migration guidance toward standalone integration packages.
@@ -926,8 +186,8 @@ src\munassiq\rag.py:27
 
 tests/test_integration.py::test_capstone_end_to_end
 tests/test_integration.py::test_capstone_end_to_end
-tests/test_supervisor.py::test_llm_routes_via_transfer
-tests/test_supervisor.py::test_llm_routes_via_transfer
+tests/test_integration.py::test_capstone_end_to_end
+tests/test_integration.py::test_capstone_end_to_end
 tests/test_supervisor.py::test_llm_routes_via_transfer
 tests/test_supervisor.py::test_supervisor_builds_and_forbids_direct_answers
   C:\Users\abdul\Desktop\Islamic Content Association\SDAIA Building AI Agents Systems\munassiq\.venv\Lib\site-packages\langgraph_supervisor\supervisor.py:431: LangGraphDeprecatedSinceV10: create_react_agent has been moved to `langchain.agents`. Please update your import to `from langchain.agents import create_agent`. Deprecated in LangGraph V1.0 to be removed in V2.0.
@@ -939,10 +199,7 @@ tests/test_integration.py::test_capstone_end_to_end
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ===========================
-FAILED tests/test_memory.py::test_same_thread_keeps_short_term_context - groq...
-FAILED tests/test_rag.py::test_knowledge_tool_returns_passages_with_source - ...
-FAILED tests/test_rag.py::test_knowledge_agent_answers_from_the_corpus - chro...
-FAILED tests/test_reliability.py::test_llm_recovery_with_real_model - groq.Ra...
-FAILED tests/test_supervisor.py::test_llm_routes_via_transfer - groq.RateLimi...
-5 failed, 34 passed, 1 xfailed, 8 warnings, 8 rerun in 995.34s (0:16:35)
+FAILED tests/test_integration.py::test_capstone_end_to_end - pydantic_core._p...
+FAILED tests/test_scaffold.py::test_env_and_corpus_guarded - AssertionError: ...
+2 failed, 38 passed, 8 warnings, 4 rerun in 1711.48s (0:28:31)
 EXIT=1

@@ -61,6 +61,9 @@ DOCS_PLAN_PREFIX = "docs/plan/"
 STATIC_PATTERNS: tuple[tuple[str, bytes], ...] = (
     ("مفتاح Groq (gsk_)", rb"gsk_[A-Za-z0-9]{10,}"),
     ("مفتاح LangSmith (lsv2_)", rb"lsv2_[A-Za-z0-9_]{10,}"),
+    ("مفتاح OpenRouter (sk-or-)", rb"sk-or-[A-Za-z0-9-]{10,}"),
+    ("مفتاح Google (AIza)", rb"AIza[A-Za-z0-9_-]{10,}"),
+    ("مفتاح Mistral في سياق تعيين", rb"MISTRAL_API_KEY\s{0,2}=\s{0,2}[A-Za-z0-9]{8,}"),
     ("مسار مستخدم على القرص (C:\\Users)", rb"[Cc]:[\\/]{1,2}[Uu]sers"),
     ("اسم الجمعية بالإنجليزية", rb"Islamic\s{1,4}Content\s{1,4}Association"),
 )

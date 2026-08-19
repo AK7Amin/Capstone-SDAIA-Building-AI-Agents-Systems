@@ -24,17 +24,63 @@ load_dotenv(dotenv_path=ENV_PATH)
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 
-# النموذج الافتراضي هو الأقوى المتاح على الحساب؛ MUNASSIQ_MODEL يسمح بالتحويل
-# المؤقت إلى نموذج شقيق بميزانية tokens مستقلة عند بلوغ سقف Groq اليومي
-# (حدود Groq تُحسب لكل نموذج على حدة).
-DEFAULT_MODEL = "openai/gpt-oss-120b"
+# المزود الافتراضي Groq (بيئة الدورة)؛ MUNASSIQ_PROVIDER يحوّل إلى مزود آخر
+# عند بلوغ سقف Groq المجاني اليومي — openrouter يتيح نموذج الدورة الأصلي
+# llama-3.3-70b-instruct الذي يرجع 404 على حساب Groq هذا.
+DEFAULT_PROVIDER = "groq"
+# نفس النموذج على المزوّدَين: gpt-oss-120b أثبت نداءات الأدوات والمخرجات
+# المهيكلة عبر كل الشرائح. جُرّب llama-3.3-70b (نموذج الدورة) عبر OpenRouter
+# فدخل حلقة تحويلات لا تتوقف في المشرف (GraphRecursionError) — استُبعد.
+DEFAULT_MODELS = {
+    "groq": "openai/gpt-oss-120b",
+    "openrouter": "openai/gpt-oss-120b",
+    "google": "gemini-2.5-flash",
+}
 
 
-def get_llm() -> ChatGroq:
-    """يبني عميل ChatGroq المشترك بالمواصفات الموحّدة لكل وكلاء المشروع."""
-    return ChatGroq(
-        model=os.environ.get("MUNASSIQ_MODEL", DEFAULT_MODEL),
-        temperature=0,
-        max_retries=2,
-        timeout=60,
-    )
+def get_llm():
+    """يبني عميل الدردشة المشترك بالمواصفات الموحّدة لكل وكلاء المشروع.
+
+    المزود من ``MUNASSIQ_PROVIDER`` والنموذج من ``MUNASSIQ_MODEL`` — القيم
+    الافتراضية أعلاه. كل المزودين هنا مجربون على نداءات الأدوات والمخرجات
+    المهيكلة التي يعتمد عليها المشروع.
+    """
+    provider = os.environ.get("MUNASSIQ_PROVIDER", DEFAULT_PROVIDER)
+    model = os.environ.get("MUNASSIQ_MODEL") or DEFAULT_MODELS[provider]
+    common = {"temperature": 0, "max_retries": 2, "timeout": 60}
+
+    if provider == "groq":
+        return ChatGroq(model=model, **common)
+    if provider == "openrouter":
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(
+            model=model,
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.environ["OPENROUTER_API_KEY"],
+            **common,
+        )
+    if provider == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        return ChatGoogleGenerativeAI(model=model, **common)
+    raise ValueError(f"مزود غير معروف: {provider}")
+
+
+def invoke_structured(structured_runnable, prompt, attempts: int = 3):
+    """نداء مخرج مهيكل بإعادة محاولة على ValidationError.
+
+    بعض المزودين يعيد أحيانًا قيمة خام (شوهد فعليًا: ``-2.0`` بدل كائن
+    TriageDecision عبر OpenRouter) فيرمي pydantic خطأ تحقق — نزوة عابرة
+    تُحل بإعادة النداء، وهي تطبيق استراتيجية «LLM-recoverable» على
+    نداءاتنا المهيكلة نفسها. بعد استنفاد المحاولات ينتشر الخطأ الأصلي.
+    """
+    from pydantic import ValidationError
+
+    last_error = None
+    for _ in range(attempts):
+        try:
+            return structured_runnable.invoke(prompt)
+        except ValidationError as error:
+            last_error = error
+    raise last_error
