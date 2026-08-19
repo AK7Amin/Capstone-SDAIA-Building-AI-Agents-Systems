@@ -35,6 +35,18 @@ building — with durable state that survives a process restart.
 
 The end-to-end acceptance test is `tests/test_integration.py::test_capstone_end_to_end`.
 
+### Evidence from the live LangSmith traces
+
+Cross-thread long-term memory — the `munassiq_app` task tree, with the fact
+written in one thread surfacing in `memories_used` on a **different** thread:
+
+![Cross-thread memory trace](docs/assets/trace-memory-cross-thread.png)
+
+Supervisor routing — the LLM's own `transfer_to_calendar_agent` handoff and
+the worker's round trip, visible in the trace tree:
+
+![Supervisor handoff trace](docs/assets/trace-supervisor-handoff.png)
+
 ## Architecture
 
 ```mermaid
@@ -69,7 +81,11 @@ pytest                                            # full suite (live Groq + Lang
 jupyter notebook munassiq_capstone.ipynb          # run top-to-bottom from the repo root
 ```
 
-- Model: `openai/gpt-oss-120b` on Groq (override with `MUNASSIQ_MODEL`).
+- Model: `openai/gpt-oss-120b` — served by Groq by default; the committed
+  evidence run used the same model via OpenRouter after Groq's free daily
+  quota ran out (`MUNASSIQ_PROVIDER=openrouter`; override model with
+  `MUNASSIQ_MODEL`). The swap and its trade-offs are documented in
+  `docs/WRITEUP-DRAFT.md`.
 - Tracing: `LANGCHAIN_TRACING_V2=true` — note the exact name; the common
   misspelling `LANGSMITH_TRACING_V2` fails **silently** and our config guards
   against it.

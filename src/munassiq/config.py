@@ -68,12 +68,14 @@ def get_llm():
 
 
 def invoke_structured(structured_runnable, prompt, attempts: int = 3):
-    """نداء مخرج مهيكل بإعادة محاولة على ValidationError.
+    """نداء مخرج مهيكل بإعادة محاولة على نزوات المزود المرصودة.
 
-    بعض المزودين يعيد أحيانًا قيمة خام (شوهد فعليًا: ``-2.0`` بدل كائن
-    TriageDecision عبر OpenRouter) فيرمي pydantic خطأ تحقق — نزوة عابرة
-    تُحل بإعادة النداء، وهي تطبيق استراتيجية «LLM-recoverable» على
-    نداءاتنا المهيكلة نفسها. بعد استنفاد المحاولات ينتشر الخطأ الأصلي.
+    ثلاثة أشكال فشل شوهدت **فعليًا** عبر OpenRouter وكلها عابرة تُحل
+    بإعادة النداء (تطبيق استراتيجية «LLM-recoverable» على نداءاتنا نفسها):
+    قيمة خام بدل الكائن (``-2.0`` → ValidationError من pydantic)، ورسالة
+    بلا حقل ``parsed`` (ValueError من langchain)، وفشل تحليل جانب الخادم
+    (BadRequestError برمز 400). ما عداها ينتشر فورًا — لا نبتلع أخطاء
+    البرمجة؛ وبعد استنفاد المحاولات ينتشر آخر خطأ.
     """
     from pydantic import ValidationError
 
@@ -81,6 +83,11 @@ def invoke_structured(structured_runnable, prompt, attempts: int = 3):
     for _ in range(attempts):
         try:
             return structured_runnable.invoke(prompt)
-        except ValidationError as error:
+        except Exception as error:
+            recoverable = isinstance(error, (ValidationError, ValueError)) or (
+                type(error).__name__ == "BadRequestError"
+            )
+            if not recoverable:
+                raise
             last_error = error
     raise last_error

@@ -58,7 +58,7 @@ def main() -> int:
 
     print(f"[✓] آخر {len(runs)} من الـruns:")
     for run in runs:
-        print(f"    {run['id']}  {run['name']}  {run['started_at']}")
+        print(f"    {run['id']}  {run['name']}  {run['status']}")
 
     return 0
 
