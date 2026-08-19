@@ -106,14 +106,18 @@ def build_retriever(k: int = 3):
     """يبني الفهرس من صفر ويعيد مسترجعًا بأعلى ``k`` مقاطع.
 
     الـcollection ثابتة الاسم تُحذف أولًا إن وُجدت ثم يعاد إنشاؤها، فبناءان
-    متتاليان يعطيان فهرسًا واحدًا لا فهرسًا مضاعفًا.
+    متتاليان يعطيان فهرسًا واحدًا لا فهرسًا مضاعفًا. وكل بناء يُبطل المسترجع
+    المشترك للأداة (الحذف أبطل الـcollection القديمة التي كان مربوطًا بها —
+    علة كشفها تشغيل السويت الكامل: ``NotFoundError`` على uuid محذوف).
     """
+    global _RETRIEVER
     client = _get_client()
     try:
         client.delete_collection(COLLECTION_NAME)
     except Exception:
         # لا collection بهذا الاسم بعد — أول بناء في هذه العملية.
         pass
+    _RETRIEVER = None  # المسترجع المشترك صار مربوطًا بـcollection محذوفة
 
     chunks = split_corpus(load_corpus())
     store = Chroma.from_documents(
@@ -126,7 +130,10 @@ def build_retriever(k: int = 3):
 
 
 def _shared_retriever():
-    """مسترجع واحد تشترك فيه نداءات الأداة — لا يعاد بناء الفهرس كل سؤال."""
+    """مسترجع واحد تشترك فيه نداءات الأداة — لا يعاد بناء الفهرس كل سؤال.
+
+    يُعاد بناؤه تلقائيًا إذا أبطله ``build_retriever`` (انظر التعليق هناك).
+    """
     global _RETRIEVER
     if _RETRIEVER is None:
         _RETRIEVER = build_retriever()
