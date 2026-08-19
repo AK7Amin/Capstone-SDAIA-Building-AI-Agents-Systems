@@ -21,3 +21,12 @@ local_cache/
 
 # سجلات تشغيل داخلية — تحمل مسارات مطلقة (قيد PRD: لا مسار مطلق في ملف متتبَّع)
 docs/plan/**/*.log
+
+# مخلفات بناء العرض التقديمي
+presentation/node_modules/
+presentation/deck-png/
+presentation/ref-png/
+presentation/*.jpg
+presentation/ref-content.md
+presentation/pptx-scripts/
+presentation/package-lock.json
