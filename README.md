@@ -24,14 +24,14 @@ building — with durable state that survives a process restart.
 
 | # | Rubric section | Implementation | Notebook section | Test |
 |---|---|---|---|---|
-| 1 | Agent fundamentals — real tool calls + structured output | `src/munassiq/tools.py` (`create_event`, `save_email_draft`, Pydantic `TriageDecision` via `with_structured_output`) | §2 | `tests/test_tools.py` |
-| 2 | Multi-agent routing — the **LLM** decides | `src/munassiq/supervisor.py` (`langgraph-supervisor`; printed `transfer_to_*` calls) | §3 | `tests/test_supervisor.py` |
-| 3 | RAG pipeline — load → split → embed → store → retrieve | `src/munassiq/rag.py` (multilingual MiniLM via fastembed, Chroma) + written 2-Step vs Agentic vs Hybrid justification | §4 | `tests/test_rag.py` |
-| 4 | Context & state — checkpointer + **separate Store**, cross-thread proof | `src/munassiq/memory.py` (`SqliteSaver` + `SqliteStore`, both on disk) | §5 | `tests/test_memory.py` |
-| 5 | Human-in-the-loop — `interrupt()` **and** `Command(resume=...)` | `src/munassiq/app.py` (pause before send; resume text used verbatim) | §6 | `tests/test_hitl.py` |
-| 6 | Functional API + ≥2 error strategies | `@task`/`@entrypoint` throughout; `RetryPolicy` (transient) + LLM-recoverable correction loop | §7 | `tests/test_reliability.py` |
-| 7 | Workflow pattern — implemented **and named** | **Evaluator-Optimizer** inside the correspondence path; the supervisor itself is **Orchestrator-Worker** | §8 | `tests/test_reliability.py` |
-| 8 | LangSmith observability | `src/munassiq/tracing.py` (guards the exact `LANGCHAIN_TRACING_V2` name; polling verifier) | §9 | `tests/test_tracing.py` |
+| 1 | Agent fundamentals — real tool calls + structured output | `src/munassiq/tools.py` (`create_event`, `save_email_draft`, Pydantic `TriageDecision` via `with_structured_output`) | §1 | `tests/test_tools.py` |
+| 2 | Multi-agent routing — the **LLM** decides | `src/munassiq/supervisor.py` (`langgraph-supervisor`; printed `transfer_to_*` calls) | §2 | `tests/test_supervisor.py` |
+| 3 | RAG pipeline — load → split → embed → store → retrieve | `src/munassiq/rag.py` (multilingual MiniLM via fastembed, Chroma) + written 2-Step vs Agentic vs Hybrid justification | §3 | `tests/test_rag.py` |
+| 4 | Context & state — checkpointer + **separate Store**, cross-thread proof | `src/munassiq/memory.py` (`SqliteSaver` + `SqliteStore`, both on disk) | §4 | `tests/test_memory.py` |
+| 5 | Human-in-the-loop — `interrupt()` **and** `Command(resume=...)` | `src/munassiq/app.py` (pause before send; resume text used verbatim) | §5 | `tests/test_hitl.py` |
+| 6 | Functional API + ≥2 error strategies | `@task`/`@entrypoint` throughout; `RetryPolicy` (transient) + LLM-recoverable correction loop | §6 | `tests/test_reliability.py` |
+| 7 | Workflow pattern — implemented **and named** | **Evaluator-Optimizer** inside the correspondence path; the supervisor itself is **Orchestrator-Worker** | §7 | `tests/test_reliability.py` |
+| 8 | LangSmith observability | `src/munassiq/tracing.py` (guards the exact `LANGCHAIN_TRACING_V2` name; polling verifier) | §8 | `tests/test_tracing.py` |
 
 The end-to-end acceptance test is `tests/test_integration.py::test_capstone_end_to_end`.
 

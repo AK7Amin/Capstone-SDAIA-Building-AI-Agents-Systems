@@ -1,205 +1,245 @@
-# مسودة الـwrite-up — «المُنسِّق»
+# Write-up draft — "Munassiq" (المُنسِّق)
 
-> مسودة عمل يعيد المالك صياغتها بصوته قبل التسليم. المحتوى هنا مادة خام
-> مضبوطة الحقائق، لا نصٌّ نهائي.
+> A working draft that the owner rephrases in his own voice before submission. What
+> is here is fact-checked raw material, not final prose.
 >
-> **قاعدة حاكمة**: كل جملة هنا يجب أن يقابلها شيءٌ مرئي في النوتبوك أو في
-> الاختبارات. ما لم يُنفَّذ بعد يبقى فراغًا مُعلَّمًا — لا يُملأ بتخمين.
+> **Governing rule**: every sentence here must be matched by something visible in the
+> notebook or in the tests. Whatever has not been built yet stays a marked blank — it
+> is never filled in by guesswork.
 
-**المشروع**: المُنسِّق — مساعد مكتب جمعية على **المسار A** (مشرف Supervisor
-وثلاثة عمّال: التقويم، والمعرفة، والمراسلات).
-
----
-
-## 1 — أساسيات الوكيل: أدوات تستعمل معاملاتها، ومخرجٌ مهيكل
-
-**ما بُني**: ثلاث أدوات معرَّفة بـ`@tool` في `src/munassiq/tools.py`، ومخرج
-تصنيفٍ مهيكل `TriageDecision` عبر `with_structured_output`.
-
-**القرار**: كل أداة **تستعمل معاملاتها فعلًا** — `create_event(title, day)`
-تُلحق بقائمة `CALENDAR` عنصرًا مشتقًّا من معاملَيها، فمعاملان مختلفان يعطيان
-حالةً مختلفة وناتجًا مختلفًا. وقرارُ التوجيه يُقرأ من حقلٍ مُتحقَّق منه
-(`worker` من قائمة مغلقة، `needs_human_approval` منطقي) لا من نصٍّ حرٍّ
-يُفتَّش فيه بـ`in`.
-
-**لماذا**: أداةٌ تتجاهل ما يُمرَّر إليها ليست نداء أداة، وإنما دالةٌ تُزيّن
-المخرج؛ والفرق يظهر لحظة اختلاف المعاملات لا لحظة نجاح النداء. وكذلك التفتيش
-عن كلمةٍ في نصٍّ حر يمرّ بصمتٍ حين يصوغ النموذج قراره بعبارة أخرى، بينما
-الحقل المهيكل إمّا يصل بقيمةٍ من القائمة المغلقة وإمّا يفشل التحقق صراحةً.
+**The project**: Munassiq — an office assistant for a non-profit association, on
+**Track A** (a Supervisor plus three workers: calendar, knowledge, and
+correspondence).
 
 ---
 
-## 2 — المشرف والتوجيه: نمط Orchestrator-Worker
+## 1 — Agent fundamentals: tools that use their arguments, and structured output
 
-**ما بُني**: مشرفٌ عبر `create_supervisor` في `src/munassiq/supervisor.py`
-فوق ثلاثة عمّال، كلٌّ منهم وكيل ReAct كامل في `src/munassiq/workers.py`.
+**What was built**: three tools defined with `@tool` in `src/munassiq/tools.py`, and a
+structured triage output `TriageDecision` obtained through `with_structured_output`.
 
-**القرار المسمّى**: **Orchestrator-Worker** — منسِّقٌ واحد يقرأ الطلب ويفوّضه
-إلى المختص، ولكل عاملٍ أدواتُ اختصاصه وحدها. والتوجيه **قرار نموذج** لا سلسلة
-شروط: `create_supervisor` يشتق من اسم كل عامل أداةَ تسليم
-`transfer_to_<name>`، فيظهر التفويض في الرسائل نداءَ أداةٍ صريحًا — وهو الدليل
-المطبوع في النوتبوك وفي `tests/test_supervisor.py`.
+**The decision**: every tool **actually uses its arguments** — `create_event(title,
+day)` appends to the `CALENDAR` list an entry derived from both of them, so different
+arguments yield a different state and a different return value. And the routing
+decision is read from a validated field (`worker` drawn from a closed list,
+`needs_human_approval` a boolean) rather than from free text searched with `in`.
 
-**لماذا**: طلبات مكتب الجمعية مختلطة الطبيعة (حجز موعد، سؤال عن سياسة، صياغة
-رسالة) وأدواتها لا تتشابه، فوكيلٌ واحد يحمل الأدوات كلها يخلط بينها. والفصل
-حصرٌ **بالبنية** لا برجاءٍ في نص التعليمات: عامل التقويم لا يرى أداة البريد
-أصلًا فلا يقدر أن ينحرف إليها. وprompt المشرف يمنعه نصًّا من الإجابة بنفسه،
-لأن النموذج بغير هذا المنع يميل إلى تلبية الطلب من عنده فيخرج جوابٌ معقول بلا
-أي نداء أداة والتقويم فارغ.
-
----
-
-## 3 — RAG: الاختيار بين 2-Step وAgentic وHybrid
-
-**ما بُني**: خط استرجاع في `src/munassiq/rag.py` فوق وثائق `data/corpus/`
-التركيبية (تقسيم 500/50، فهرس Chroma، تضمين fastembed)، وأداة بحثٍ واحدة بيد
-عامل المعرفة.
-
-أمام المُنسِّق ثلاثة أنماط: **2-Step RAG** يسترجع مرة واحدة قبل كل جواب ثم
-يولّد منه؛ و**Agentic RAG** يجعل الاسترجاع أداةً بيد وكيل يقرر بنفسه متى
-يستعلم وبأي صياغة وكم مرة؛ و**Hybrid RAG** وسطٌ بينهما يسترجع دائمًا مرة
-أولى ويترك للوكيل استعلامًا إضافيًا عند الحاجة.
-
-المختار هنا **Agentic RAG**: طلبات مكتب الجمعية مختلطة الطبيعة — حجز موعد،
-صياغة رسالة، سؤال عن سياسة — والمشرف يفوّض كل طلب إلى عامله، فيصل عامل
-المعرفة وحده ما يستحق استرجاعًا. وأسئلة السياسات نفسها متفاوتة: بعضها
-تكفيه نتيجة واحدة، وبعضها يقع جوابه بين وثيقتين فيحتاج استعلامًا ثانيًا
-بصياغة أخرى، وهذا قرارٌ لا يصلح تثبيته سلفًا في خطٍّ ثابت.
-
-والمقابل مذكور بلا تجميل: **2-Step** أبسط وأرخص وأثبت زمنًا — خطوة استرجاع
-واحدة معلومة التكلفة — لكنه يسترجع لكل طلب حتى ما لا يحتاج استرجاعًا أصلًا،
-فيدفع كلفة تضمينٍ وسياقٍ في طلب حجز موعد لا علاقة له بالوثائق. و**Hybrid**
-يخفف ذلك جزئيًا لكنه يبقي الاسترجاع الأول إجباريًا. وثمن Agentic أن عدد
-النداءات غير محدود سلفًا: تأخّرٌ أعلى وتكلفة أقل تنبؤًا، وسلوكٌ يعتمد على
-حسن التعليمات — ولذلك حُصر عامل المعرفة بأداة واحدة وأُلزم نصًّا بالإجابة من
-المقاطع وحدها وبقول «لا أجد» عند غيابها.
-
-**قرارٌ فرضته التجربة**: موديل التضمين الافتراضي في fastembed إنجليزي
-(`bge-small-en`) وفشل مع العربية — استرجع مقاطع لا صلة لها بالسؤال؛ والمعتمد
-`paraphrase-multilingual-MiniLM-L12-v2`. والاختبار يؤكد على **الحقيقة الحرفية
-المزروعة** في الوثيقة لا على معقولية جواب النموذج.
+**Why**: a tool that ignores what is passed to it is not a tool call, it is a function
+that decorates the output; and the difference shows up the moment the arguments differ,
+not the moment the call succeeds. Likewise, searching for a word inside free text
+passes silently whenever the model phrases its decision differently, whereas a
+structured field either arrives with a value from the closed list or fails validation
+explicitly.
 
 ---
 
-## 4 — الذاكرة: نوعان مختلفان لا نوعٌ واحد بمقياسين
+## 2 — Supervisor and routing: the Orchestrator-Worker pattern
 
-**ما بُني**: `SqliteSaver` مفتاحه `thread_id` للذاكرة قصيرة المدى، وStore
-بفضاء أسماء `("memories", user_id)` للطويلة، وكلاهما على القرص في
+**What was built**: a supervisor via `create_supervisor` in
+`src/munassiq/supervisor.py` on top of three workers, each of them a full ReAct agent
+in `src/munassiq/workers.py`.
+
+**The named decision**: **Orchestrator-Worker** — a single coordinator reads the
+request and delegates it to the specialist, and each worker holds the tools of its own
+speciality alone. Routing is a **model decision**, not a chain of conditionals:
+`create_supervisor` derives a handoff tool `transfer_to_<name>` from each worker's
+name, so the delegation shows up in the messages as an explicit tool call — which is
+the evidence printed in the notebook and in `tests/test_supervisor.py`.
+
+**Why**: the office's requests are mixed in nature (booking an appointment, asking
+about a policy, drafting a letter) and their tools are unalike, so a single agent
+carrying all the tools confuses them. The separation is a restriction **by structure**,
+not a plea in the instruction text: the calendar worker cannot even see the mail tool,
+so it has no way to drift into it. And the supervisor's prompt forbids it, in words,
+from answering by itself, because without that ban the model tends to satisfy the
+request on its own — out comes a plausible answer with no tool call at all and an
+empty calendar.
+
+---
+
+## 3 — RAG: choosing between 2-Step, Agentic, and Hybrid
+
+**What was built**: a retrieval pipeline in `src/munassiq/rag.py` over the synthetic
+documents in `data/corpus/` (500/50 chunking, a Chroma index, fastembed embeddings),
+and a single search tool in the hands of the knowledge worker.
+
+Three patterns were open to Munassiq: **2-Step RAG** retrieves once before every
+answer and generates from it; **Agentic RAG** makes retrieval a tool in the hands of
+an agent that decides for itself when to query, with what wording, and how many times;
+and **Hybrid RAG** sits between them, always retrieving a first time and leaving an
+additional query to the agent when needed.
+
+The choice here is **Agentic RAG**: the office's requests are mixed in nature —
+booking an appointment, drafting a letter, asking about a policy — and the supervisor
+delegates each request to its own worker, so the knowledge worker alone receives
+whatever deserves retrieval. The policy questions themselves also vary: some are
+settled by a single result, while others have their answer split across two documents
+and need a second query worded differently, and that is a decision that cannot
+sensibly be fixed in advance inside a rigid pipeline.
+
+The counterpart is stated without varnish: **2-Step** is simpler, cheaper, and steadier
+in latency — one retrieval step of known cost — but it retrieves for every request,
+including requests that need no retrieval at all, so it pays an embedding and context
+cost on an appointment-booking request that has nothing to do with the documents.
+**Hybrid** eases that partly but keeps the first retrieval mandatory. And the price of
+Agentic is that the number of calls is not bounded in advance: higher latency, less
+predictable cost, and behaviour that depends on the quality of the instructions —
+which is why the knowledge worker was restricted to a single tool and instructed in
+words to answer from the retrieved passages alone, and to say «لا أجد» ("I cannot find
+it") when they are absent.
+
+**A decision forced by experiment**: fastembed's default embedding model is English
+(`bge-small-en`) and it failed on Arabic — it retrieved passages unrelated to the
+question; the model adopted is `paraphrase-multilingual-MiniLM-L12-v2`. And the test
+asserts on the **verbatim planted fact** in the document rather than on the
+plausibility of the model's answer.
+
+---
+
+## 4 — Memory: two different kinds, not one kind on two scales
+
+**What was built**: `SqliteSaver` keyed by `thread_id` for short-term memory, and a
+Store namespaced by `("memories", user_id)` for long-term memory, both on disk in
 `src/munassiq/memory.py`.
 
-**القرار**: الحقيقة تُكتب في مخزنٍ **خارج الـthread**، وتُحقن في السياق في كل
-رحلة **بلا شرط** من جسم الـentrypoint. ولا يُستعمل `from_conn_string`: هي
-مدير سياق يغلق الاتصال عند الخروج من `with`، فاستعمالها خارجه يعطي كائنًا فوق
-اتصالٍ مغلق يعمل في السطر الأول ويفشل في الثاني — ولذلك يُبنى الاتصال ويُمرَّر
-للباني مباشرة.
+**The decision**: the fact is written into a store that lives **outside the thread**,
+and is injected into the context on every journey **unconditionally** from the
+entrypoint body. And `from_conn_string` is not used: it is a context manager that
+closes the connection on leaving the `with` block, so using it outside that block
+gives an object over a closed connection — it works on the first line and fails on the
+second. That is why the connection is built and passed straight to the constructor.
 
-**لماذا**: رسائل متراكمة في thread واحد **ليست** ذاكرة طويلة المدى، بل سياق
-محادثة — وهذا أكثر ما يسقط فيه المتقدمون. فالدليل المقبول ثلاثي: كتابةٌ في
-`nb-thread-1`، ثم `store.search` يُظهر الحقيقة مكتوبةً خارج الـthread، ثم
-استدعاءٌ من `nb-thread-2` لا يشترك مع الأول في أي رسالة. ولو تُرك الحقن لأداةٍ
-يقرر النموذج نداءها لصار التذكّر احتمالًا لا ضمانًا، والمطلوب ذاكرةٌ تعمل لا
-ذاكرةٌ متاحة.
-
----
-
-## 5 — الوقوف البشري: interrupt ثم resume
-
-**ما بُني**: `interrupt` في جسم الـ`@entrypoint` قبل الفعل غير القابل للعكس،
-واستئنافٌ بـ`Command(resume=...)` على الـthread نفسه، ثم كتابةٌ في صندوق
-الصادر.
-
-**القرار**: الوقوف يعرض على البشري مسودةً **مصوغةً سلفًا** فهو يراجع نصًّا لا
-فراغًا؛ وموضع الوقوف جسمُ الـentrypoint نفسه لا داخل `@task`؛ وما يعود من
-الاستئناف يمضي **حرفيًا** إلى صندوق الصادر بلا أي مرور على نموذج (الدالة
-`send_approved_email` ليست `@tool` أصلًا، فهي خارج متناول النموذج).
-
-**لماذا**: الـ`@task` وحدةٌ تُعاد أو تُستعاد كاملة، فوقوفٌ في وسطها يعني إعادة
-تنفيذ ما سبقه عند الاستئناف. وأي تمرير على نموذج بعد الموافقة كان سيغيّر حرفًا
-— فلا يعود ما خرج نصَّ البشري. ولذلك يؤكد الاختبار **تساويًا تامًّا** لا
-احتواءً بين نص الاستئناف ومحتوى ملف الصادر. ولا إرسال بريد حقيقي في المشروع:
-«الإرسال» كتابةٌ في `data/outbox/` المحلي.
+**Why**: messages piling up in a single thread are **not** long-term memory, they are
+conversation context — and this is what candidates get wrong most often. So the
+acceptable evidence is threefold: a write on `nb-thread-1`, then `store.search` showing
+the fact stored outside the thread, then a call from `nb-thread-2` that shares not one
+message with the first. And had injection been left to a tool the model chooses to
+call, recall would become a probability rather than a guarantee — what is required is
+memory that works, not memory that is available.
 
 ---
 
-## 6 — Functional API واستراتيجيتا الخطأ
+## 5 — Human-in-the-loop: interrupt, then resume
 
-**ما بُني**: `@entrypoint` واحد وجملة `@task`، مع استراتيجيتين للتعامل مع
-الخطأ في `src/munassiq/workers.py`: `RetryPolicy(max_attempts=3)` على المهمة
-للفشل العابر، وإعادة نص الخطأ إلى سياق النموذج رسالةً تصحيحية لخطأ المدخل.
+**What was built**: an `interrupt` in the body of the `@entrypoint` before the
+irreversible act, a resume with `Command(resume=...)` on the same thread, and then a
+write into the outbox.
 
-**القرار**: جسم الـentrypoint **غراءٌ نقي** — شرطٌ ونداءات `@task` وجمع
-نتائجها؛ وكل نداء نموذج وكل أثر جانبي داخل `@task`.
+**The decision**: the pause presents the human with a **pre-composed** draft, so what
+is reviewed is a text and not a blank; the pause sits in the entrypoint body itself,
+not inside a `@task`; and what comes back from the resume travels **verbatim** to the
+outbox without passing through any model (the function `send_approved_email` is not a
+`@tool` at all, so it is out of the model's reach).
 
-**لماذا**: السبب ميكانيكي لا تجميلي — عند الاستئناف بعد `interrupt` يُعاد
-تنفيذ جسم الـentrypoint من أوله، بينما نتائج الـ`@task` المكتملة تُقرأ من
-الـcheckpointer ولا تُعاد؛ فسطرٌ ينادي نموذجًا خارج `@task` يعني فاتورةً مكررة
-وناتجًا مختلفًا عمّا بُني عليه القرار. وأما فصل الاستراتيجيتين فلأن **مالك
-الإصلاح** مختلف لا لأن شدة الخطأ مختلفة: الفشل العابر لا يملك أحدٌ إصلاحه
-والوقت وحده يصلحه، فتُترك المحاولات لـLangGraph لتظهر مرقّمةً في الـcheckpointer
-وفي الأثر بدل أن تُخفيها حلقة `try/except` داخل نداءٍ واحد ناجح ظاهريًا — وبعد
-الاستنفاد **ينتشر** الاستثناء ولا يُبتلَع. أما خطأ المدخل فالتكرار الأعمى يعيد
-المدخل نفسه فيقع الخطأ نفسه إلى الأبد؛ والعلاج أن يصير نصُّ الخطأ معلومةً في
-سياق النموذج يتعلّم منها.
-
----
-
-## 7 — النمط المسمّى: Evaluator-Optimizer
-
-**ما بُني**: حلقة داخل `draft_correspondence`: مولِّدٌ يكتب المسودة، ثم مقيِّمٌ
-يحكم حكمًا **مهيكلًا** (`DraftVerdict` بحقول `score` و`approved` و`feedback`)،
-ثم محسِّنٌ يعيد الكتابة بالملاحظات إن رُفضت، ثم يُعاد التقييم — بسقفٍ صلب
-جولتين.
-
-**القرار المسمّى**: **Evaluator-Optimizer**، والحلقة كلها تدور **قبل** الوقوف
-البشري ومطويّة داخل `@task` واحدة، والقرار يُقرأ من الحقل `approved` وحده.
-
-**لماذا**: الرسالة الصادرة باسم الجمعية لها معيار قبولٍ يمكن النطق به — تنقل
-ما طُلب كاملًا، بلا زيادةٍ لم تَرِد في الطلب، بعربية فصيحة موجزة، بتحيةٍ
-وخاتمة — وهذا بالضبط شرط نجاح هذا النمط: ناقدٌ يقدر أن يقول ما يُصلَح وكيف، لا
-مجرد «حسّنها». والسقف الصلب لأن مقيّمًا لا يقتنع أبدًا يُدير حلقةً بلا نهاية.
-والقراءة من الحقل المهيكل لأن حكم رفضٍ قد يذكر كلمة «معتمدة» نفيًا أو
-اقتباسًا، فيمرّ ما كان يجب أن يُحسَّن. وطيّ الحلقة في `@task` واحدة يجعلها
-تُستعاد وحدةً واحدة عند الاستئناف بدل أن تُعاد جولاتها.
+**Why**: a `@task` is a unit that is re-run or restored whole, so pausing in the middle
+of one means re-executing everything before it on resume. And any pass through a model
+after approval would have changed a character — and then what came out would no longer
+be the human's text. That is why the test asserts **exact equality**, not containment,
+between the resume text and the contents of the outbox file. And no real e-mail is sent
+in this project: "sending" means writing into the local `data/outbox/`.
 
 ---
 
-## 8 — تتبع LangSmith
+## 6 — Functional API and the two error strategies
 
-**ما بُني**: تفعيل التتبع من `.env`، وحارسٌ في `src/munassiq/tracing.py` يفشل
-مبكرًا إن كان التتبع مطفأً، وانتظارٌ بـpolling لظهور run وُلد **بعد** لحظة
-`since` المُلتقطة قبل نداء النموذج.
+**What was built**: one `@entrypoint` and a set of `@task`s, with two strategies for
+handling errors in `src/munassiq/workers.py`: `RetryPolicy(max_attempts=3)` on the task
+for transient failure, and feeding the error text back into the model's context as a
+correction message for input error.
 
-**القرار**: اسم المتغير `LANGCHAIN_TRACING_V2` حرفيًا، ورسالة الحارس تسمّي
-الاسمين الصحيح والخاطئ معًا. ولا يُطبع من الـrun إلا المعرّف والاسم والحالة.
+**The decision**: the entrypoint body is **pure glue** — a condition, `@task` calls, and
+the collection of their results; every model call and every side effect lives inside a
+`@task`.
 
-**لماذا**: الاسم `LANGSMITH_TRACING_V2` يبدو صحيحًا تمامًا ولا يشتكي منه أحد —
-لا LangChain ولا LangSmith ولا مفسّر بايثون — لكن التتبع حينها **مطفأ**: فشلٌ
-صامت لا يُكتشف إلا بغياب الـruns من اللوحة. والتقاط `since` قبل النداء هو ما
-يجعل الانتظار دليلًا على أن التتبع يعمل **الآن** لا على أنه عمل يومًا ما.
-والانتظار polling بمهلة لا نومٌ ثابت، لأن الـrun قد يظهر بعد ثانية وقد يتأخر
-عشرًا. والتنقيح مقصود: مدخلات الـruns ومخرجاتها تحمل نصوص الأعضاء والمراسلات.
-
-**ما أظهره الـtrace فعلًا** (من runs مشروع munassiq-capstone، تشغيلة 19 أغسطس): حلقة Evaluator-Optimizer هي عنق الزجاجة الحقيقي — صياغة المسودة (compose_draft) استغرقت 3.3 ثوانٍ بينما تقييمها (evaluate_draft) بلغ 21.7 ثانية، أي أن الحَكم المهيكل أبطأ من الكاتب بنحو سبع مرات لأن إخراج Pydantic المقيد يجبر النموذج على تخطيط أدق. وأظهر الـtrace أيضًا حلقة تصحيح الأداة (run_tool_with_llm_recovery) بـ35.3 ثانية تشمل نداءي نموذج متتاليين — المحاولة الفاشلة ورسالة التصحيح — وهو بالضبط ما صممناها له.
+**Why**: the reason is mechanical, not cosmetic — on resume after an `interrupt` the
+entrypoint body is re-executed from its start, while the results of completed `@task`s
+are read from the checkpointer and are not re-run; so a line that calls a model outside
+a `@task` means a duplicated bill and a different result from the one the decision was
+built on. As for separating the two strategies, it is because the **owner of the fix**
+differs, not because the errors differ in severity: nobody owns the fix for a transient
+failure and time alone repairs it, so the attempts are left to LangGraph and appear
+numbered in the checkpointer and in the trace, instead of being hidden by a
+`try/except` loop inside a single, apparently successful call — and once they are
+exhausted the exception **propagates** rather than being swallowed. With an input error,
+by contrast, blind repetition resends the same input so the same error recurs forever;
+the remedy is for the error text to become information inside the model's context that
+it learns from.
 
 ---
 
-## ملحق — استبدال النموذج وحدود الحساب
+## 7 — The named pattern: Evaluator-Optimizer
 
-نموذج الدورة `llama-3.3-70b-versatile` **غير متاح على حساب Groq المستخدم**:
-كل نداء عليه يعود بـ`404`، وقد ثبت ذلك بسبايك قبل بدء البناء. فاستُبدل
-بالنموذج المفتوح `openai/gpt-oss-120b` الذي نجح بنداءات الأدوات وبتحويلات
-المشرف وبالمخرج المهيكل. جرى التطوير وبناء الشرائح عليه عبر **Groq** حتى نفدت
-الحصة المجانية اليومية (200 ألف token)، ثم التُقطت **دفعة الأدلة النهائية —
-النوتبوك المنفَّذ واختبار التكامل — على النموذج نفسه عبر مزود ثانٍ (OpenRouter)**
-بميزانية مستقلة؛ المتغيران `MUNASSIQ_PROVIDER`/`MUNASSIQ_MODEL` يبدّلان المزود
-والنموذج بلا تعديل كود. وجُرّبت بدائل أصغر عند ضيق الحصة فسقطت نوعيًا في
-المخرج المهيكل (تشويه اسم الأداة، وقيمة منطقية تعود نصًّا)، كما جُرّب
-`llama-3.3-70b` نفسه عبر OpenRouter فدخل حلقة تحويلات لا تتوقف في المشرف —
-فثُبّت `gpt-oss-120b` وحده. ملاحظة موثقة: توجيه OpenRouter الداخلي بين
-مستضيفيه يجعل عدد رحلات التحويل يتذبذب بين تشغيلة وأخرى (تحويل واحد نظيف أو
-تكرارات متطابقة) — سلوك مزود لا علة كود، واختبارات المشروع تتحقق من وقوع
-التحويل لا من عدده.
+**What was built**: a loop inside `draft_correspondence`: a generator writes the draft,
+then an evaluator issues a **structured** verdict (`DraftVerdict`, with the fields
+`score`, `approved`, and `feedback`), then an optimizer rewrites it using the feedback
+if it was rejected, and it is evaluated again — under a hard cap of two rounds.
 
-وحدّ الحساب المجاني على Groq يُحسب لكل نموذج على حدة، وبلوغه يعيد `429`؛ ولذلك
-عُزلت الاختبارات التي تستدعي النموذج فعلًا بوسم `api`، ويمرّ
-`pytest -m "not api"` بلا استهلاك أي حصة.
+**The named decision**: **Evaluator-Optimizer**, with the whole loop running **before**
+the human pause and folded inside a single `@task`, and the decision read from the
+`approved` field alone.
+
+**Why**: a letter going out in the association's name has an acceptance standard that
+can be said out loud — it conveys everything that was asked, adds nothing that was not
+in the request, in concise formal Arabic, with a greeting and a closing — and that is
+exactly the success condition for this pattern: a critic able to say what should be
+fixed and how, not merely "make it better". The hard cap exists because an evaluator
+that is never convinced runs an endless loop. Reading from the structured field matters
+because a rejecting verdict may mention the word "approved" as a negation or a
+quotation, and then something that ought to have been improved slips through. And
+folding the loop into a single `@task` makes it restore as one unit on resume instead
+of having its rounds re-run.
+
+---
+
+## 8 — LangSmith tracing
+
+**What was built**: tracing enabled from `.env`, a guard in `src/munassiq/tracing.py`
+that fails early if tracing is off, and a polling wait for the appearance of a run born
+**after** the `since` instant captured before the model call.
+
+**The decision**: the variable name is `LANGCHAIN_TRACING_V2` literally, and the guard's
+message names both the correct and the incorrect spelling. And nothing is printed from
+the run but its id, its name, and its status.
+
+**Why**: the name `LANGSMITH_TRACING_V2` looks perfectly correct and nobody complains
+about it — not LangChain, not LangSmith, not the Python interpreter — but tracing is
+then **off**: a silent failure discovered only through the absence of runs from the
+dashboard. And capturing `since` before the call is what makes the wait evidence that
+tracing works **now**, not that it worked some day. The wait is polling with a timeout
+rather than a fixed sleep, because a run may appear after a second or take ten. The
+redaction is deliberate: the runs' inputs and outputs carry members' texts and
+correspondence.
+
+**What the trace actually showed** (from the runs of the munassiq-capstone project, the
+19 August session): the Evaluator-Optimizer loop is the real bottleneck — composing the
+draft (compose_draft) took 3.3 seconds while evaluating it (evaluate_draft) reached 21.7
+seconds, that is, the structured judge is about seven times slower than the writer,
+because constrained Pydantic output forces the model into finer planning. The trace also
+showed the tool-correction loop (run_tool_with_llm_recovery) at 35.3 seconds spanning
+two consecutive model calls — the failed attempt and the correction message — which is
+exactly what it was designed to do.
+
+---
+
+## Appendix — model substitution and account limits
+
+The course model `llama-3.3-70b-versatile` is **not available on the Groq account used**:
+every call against it comes back `404`, as established by a spike before the build
+began. It was replaced with the open model `openai/gpt-oss-120b`, which succeeded at
+tool calls, supervisor handoffs, and structured output. Development and slice building
+ran on it through **Groq** until the free daily quota (200K tokens) was exhausted; the
+**final evidence run — the executed notebook and the integration test — was then
+captured on the same model through a second provider (OpenRouter)** on an independent
+budget. The variables `MUNASSIQ_PROVIDER` / `MUNASSIQ_MODEL` switch provider and model
+with no code change. Smaller alternatives were tried when the quota ran tight and failed
+qualitatively on structured output (a mangled tool name, a boolean returned as a
+string); `llama-3.3-70b` itself was also tried through OpenRouter and entered a
+non-terminating handoff loop in the supervisor — so `gpt-oss-120b` alone was fixed on.
+A documented observation: OpenRouter's internal routing between its hosts makes the
+number of handoff round trips fluctuate from one run to another (one clean handoff, or
+identical repetitions) — provider behaviour, not a code fault, and the project's tests
+assert that the handoff occurred, not how many times.
+
+The Groq free-account limit is counted per model, and reaching it returns `429`; that is
+why the tests that genuinely call the model were isolated behind the `api` marker, and
+`pytest -m "not api"` passes without consuming any quota.
