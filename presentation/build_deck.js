@@ -92,7 +92,8 @@ function statBox(slide, x, y, w, big, small) {
   s.addText("CAPSTONE · TRACK A · SUPERVISOR + WORKERS", { x: MX, y: 0.5, w: 9, h: 0.4, fontFace: HEAD, fontSize: 12, bold: true, color: GOLD, charSpacing: 2, margin: 0 });
   s.addText("Munassiq (المُنسِّق)\nAssociation Office Assistant", { x: MX, y: 1.0, w: 11.5, h: 1.9, fontFace: HEAD, fontSize: 42, bold: true, color: "FFFFFF", margin: 0 });
   s.addText("A supervisor and three specialist agents on a LangGraph Functional API core.\nEvery irreversible act waits for a human. Every claim has a captured run behind it.", { x: MX, y: 3.0, w: 10.8, h: 1.0, fontFace: BODY, fontSize: 16, color: "C9D3E8", margin: 0 });
-  s.addText("Abdulaziz Mulia (عبدالعزيز مُليا) — github.com/AK7Amin", { x: MX, y: 4.35, w: 10, h: 0.5, fontFace: HEAD, fontSize: 16, bold: true, color: GOLD, margin: 0 });
+  s.addText("Abdulaziz Khalid Mulia (leader) — github.com/AK7Amin", { x: MX, y: 4.35, w: 10, h: 0.5, fontFace: HEAD, fontSize: 16, bold: true, color: GOLD, margin: 0 });
+  s.addText("Team: Ali Asiri · Faisal Abdullah Alhaqbani · Moayad Abdullah Badahdah · Ali Taha Alsahad · Zaid Al-Dowsari", { x: MX, y: 4.95, w: 12, h: 0.45, fontFace: BODY, fontSize: 13, color: "C9D3E8", margin: 0 });
   s.addText("SDAIA Academy — Building AI Agent Systems · Cohort 16–20 August 2026 · Riyadh", { x: MX, y: 6.6, w: 11, h: 0.4, fontFace: BODY, fontSize: 12, color: "9FB0CE", margin: 0 });
   notes(s, "[00:00 · 25ث] السلام عليكم. مشروعي «المُنسِّق»: مساعد مكتب جمعية — مشرف يوزع على ثلاثة عمال متخصصين، بذاكرة تعيش عبر المحادثات، وبوابة موافقة بشرية قبل أي فعل لا يرتد. كل رقم في هذا العرض وراءه تشغيلة حقيقية ملتقطة في المستودع.");
 }
@@ -464,7 +465,7 @@ divider("R", "Result", "Verified numbers, and where every one of them comes from
     "pytest -m \"not api\"     # 31 tests, no keys burned",
     "pytest && jupyter notebook munassiq_capstone.ipynb",
   ], { fontSize: 11.5 });
-  s.addText("github.com/AK7Amin/TestCapstone", { x: 9.0, y: 6.3, w: 3.8, h: 0.5, fontFace: HEAD, fontSize: 13, bold: true, color: NAVY, margin: 0 });
+  s.addText("github.com/AK7Amin/Capstone-SDAIA-Building-AI-Agents-Systems", { x: 9.0, y: 6.3, w: 3.8, h: 0.5, fontFace: HEAD, fontSize: 13, bold: true, color: NAVY, margin: 0 });
   notes(s, "[08:15 · 20ث] كل قسم روبرك له صف: ملفه واختباره وخليته في النوتبوك. والمستودع يعمل عندكم: الاختبارات المحلية بلا مفاتيح، ثم الحية، ثم النوتبوك.");
 }
 

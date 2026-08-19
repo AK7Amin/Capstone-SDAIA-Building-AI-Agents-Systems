@@ -189,7 +189,7 @@ Callout (green): None of this was in the plan. All of it is in the run log.
 
 ## Slide 20 — Where the grader finds the proof
 Repo map table: rubric section → src file → test → notebook cell §.
-Repo: github.com/AK7Amin/TestCapstone (final repo per owner's decision).
+Repo: github.com/AK7Amin/Capstone-SDAIA-Building-AI-Agents-Systems (final repo per owner's decision).
 Run it: `pytest -m "not api"` (31 tests, no keys burned) → full `pytest` → open the notebook.
 
 **Notes [08:15 · 20ث]:** كل قسم روبرك له صف: ملفه واختباره وخليته في
