@@ -2,10 +2,21 @@
 
 ![tests](https://img.shields.io/badge/tests-40%20collected%20%7C%2031%20offline--green-3fb950) ![python](https://img.shields.io/badge/python-3.13-3572A5) ![langgraph](https://img.shields.io/badge/LangGraph-1.2-blue) ![checkpointer](https://img.shields.io/badge/state-SqliteSaver%20%2B%20SqliteStore-336791) ![model](https://img.shields.io/badge/LLM-Groq%20gpt--oss--120b-f55036) ![embeddings](https://img.shields.io/badge/embeddings-multilingual--MiniLM%20(local)-yellow)
 
-**Abdulaziz Mulia (عبدالعزيز مُليا)** — [@AK7Amin](https://github.com/AK7Amin)
+**Abdulaziz Khalid Mulia (عبدالعزيز خالد مُليا)** — [@AK7Amin](https://github.com/AK7Amin)
 
 SDAIA Academy — *Building AI Agent Systems*, cohort **16–20 August 2026**, Riyadh.
 Capstone **Track A: Supervisor + Workers** · [SDAIA Academy on GitHub](https://github.com/SDAIAAcademy)
+
+## Team
+
+| Role | Name |
+|---|---|
+| Leader | **Abdulaziz Khalid Mulia** |
+| Member | Ali Asiri |
+| Member | Faisal Abdullah Alhaqbani |
+| Member | Moayad Abdullah Badahdah |
+| Member | Ali Taha Alsahad |
+| Member | Zaid Al-Dowsari |
 
 A multi-agent office assistant for a non-profit association: a supervisor routes
 every request to one of three specialist workers (knowledge, calendar,
