@@ -162,6 +162,17 @@ munassiq/
   multi-instance deployment would swap in `PostgresStore` (course Day-5
   production lesson) — see *Not built*.
 
+## Possible improvements (noted, deliberately deferred)
+
+- **Retrieval evaluation metrics** (recall@k / RAGAS-style faithfulness) on the
+  planted-fact corpus — the verbatim-fact test covers correctness today;
+  metrics would add graded quality tracking.
+- **Circuit breaker / client-side rate-limit guard** around provider calls —
+  today RetryPolicy + structured-output retries + test-level reruns absorb
+  the observed failure modes.
+- **Deterministic retrieval injection into the drafting path** — the evolution
+  already documented under Known limits.
+
 ## Not built (declared honestly)
 
 No FastAPI serving layer, no UI, no real e-mail transport, no deployment — the
