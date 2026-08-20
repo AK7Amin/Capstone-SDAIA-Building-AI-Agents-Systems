@@ -165,6 +165,11 @@ by contrast, blind repetition resends the same input so the same error recurs fo
 the remedy is for the error text to become information inside the model's context that
 it learns from.
 
+The correction loop's cap is a **parameter**, not a hard-coded ceiling:
+`run_tool_with_llm_recovery(..., max_attempts=2)`. Two is the deliberate default under a
+free daily token budget — the cost of every extra round is one full model call — and a
+deployment with a paid tier raises it in one argument, with no code change.
+
 ---
 
 ## 7 — The named pattern: Evaluator-Optimizer
@@ -218,6 +223,12 @@ because constrained Pydantic output forces the model into finer planning. The tr
 showed the tool-correction loop (run_tool_with_llm_recovery) at 35.3 seconds spanning
 two consecutive model calls — the failed attempt and the correction message — which is
 exactly what it was designed to do.
+
+One point worth stating precisely: swapping the **model host** (Groq ↔ OpenRouter, same
+open model) never split the observability. LangSmith is the single tracing backend for
+every run in this project — all traces, across both hosts and all days, land in the one
+`munassiq-capstone` project; the host swap only changes the name of the LLM node inside
+a trace (`ChatGroq` vs `ChatOpenAI`), which itself is useful evidence of the swap.
 
 ---
 
