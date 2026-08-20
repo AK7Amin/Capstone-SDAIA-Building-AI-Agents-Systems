@@ -146,6 +146,14 @@ munassiq/
 
 ## Known limits
 
+- **Composite requests are two turns, by design.** "Search the policies AND
+  e-mail the summary" in one message hits a deliberate wall: the drafting path
+  has no retrieval tool, and the supervisor path cannot send. The strict split
+  isolates the send behind the single human gate. The documented evolution:
+  inject `search_policies` results deterministically into `compose_draft`
+  (the same pattern used for memory injection) — without ever giving the
+  send authority to a model.
+
 - **Groq free tier**: 200K tokens/day/model and 8K tokens/minute — the `api`
   marker exists so the offline suite stays runnable when the quota is spent.
 - The evaluator loop is capped at two rounds; correspondence quality beyond

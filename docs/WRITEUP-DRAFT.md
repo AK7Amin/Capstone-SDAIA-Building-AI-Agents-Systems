@@ -232,6 +232,18 @@ a trace (`ChatGroq` vs `ChatOpenAI`), which itself is useful evidence of the swa
 
 ---
 
+## Declared limitation — composite requests span two turns
+
+A request that needs retrieval AND sending in one message ("look up the leave
+policy and e-mail a summary") is not served in a single turn: the classifier
+routes by the dominant intent (correspondence), and the drafting path deliberately
+has no retrieval tool, while the supervisor path deliberately cannot send. This
+is the price of the safety property we chose — the send lives behind exactly one
+human gate, and nothing reaches the outbox any other way. The evolution path is
+already idiomatic in this codebase: inject `search_policies` passages into
+`compose_draft` deterministically, exactly as memories are injected — enriching
+the draft without ever handing send authority to a model.
+
 ## Appendix — model substitution and account limits
 
 The course model `llama-3.3-70b-versatile` is **not available on the Groq account used**:
