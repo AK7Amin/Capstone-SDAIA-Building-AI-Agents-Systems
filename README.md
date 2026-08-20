@@ -16,7 +16,7 @@ Capstone **Track A: Supervisor + Workers** · [SDAIA Academy on GitHub](https://
 | Member | Faisal Abdullah Alhaqbani |
 | Member | Moayad Abdullah Badahdah |
 | Member | Ali Taha Alsahad |
-| Member | Zaid Al-Dowsari |
+| Member | Zaid Aldossari |
 
 A multi-agent office assistant for a non-profit association: a supervisor routes
 every request to one of three specialist workers (knowledge, calendar,
