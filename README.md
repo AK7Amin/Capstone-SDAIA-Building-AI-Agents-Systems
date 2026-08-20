@@ -1,6 +1,6 @@
 # Munassiq (المُنسِّق) — Association Office Assistant
 
-![tests](https://img.shields.io/badge/tests-40%20collected%20%7C%2031%20offline--green-3fb950) ![python](https://img.shields.io/badge/python-3.13-3572A5) ![langgraph](https://img.shields.io/badge/LangGraph-1.2-blue) ![checkpointer](https://img.shields.io/badge/state-SqliteSaver%20%2B%20SqliteStore-336791) ![model](https://img.shields.io/badge/LLM-Groq%20gpt--oss--120b-f55036) ![embeddings](https://img.shields.io/badge/embeddings-multilingual--MiniLM%20(local)-yellow)
+![tests](https://img.shields.io/badge/tests-40%20total%20%C2%B7%2027%20run%20with%20zero%20keys-3fb950) ![python](https://img.shields.io/badge/python-3.13-3572A5) ![langgraph](https://img.shields.io/badge/LangGraph-1.2-blue) ![checkpointer](https://img.shields.io/badge/state-SqliteSaver%20%2B%20SqliteStore-336791) ![model](https://img.shields.io/badge/LLM-Groq%20gpt--oss--120b-f55036) ![embeddings](https://img.shields.io/badge/embeddings-multilingual--MiniLM%20(local)-yellow)
 
 **Abdulaziz Khalid Mulia (عبدالعزيز خالد مُليا)** — [@AK7Amin](https://github.com/AK7Amin)
 
@@ -87,8 +87,12 @@ model's discretion.
 python -m venv .venv && .venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 copy .env.example .env                            # then fill your keys
-pytest -m "not api"                               # 31 offline tests, no quota
-pytest                                            # full suite (live Groq + LangSmith)
+pytest -m "not api and not langsmith"             # 28 pure-local tests — no network at all
+pytest -m langsmith                               # +3 LangSmith connectivity (needs LANGSMITH_API_KEY)
+pytest                                            # full 40 (live LLM + LangSmith)
+# On a machine with NO keys: plain `pytest` still works — 27 pass, the rest
+# skip gracefully with a labelled reason (keys are an environment concern,
+# never a hidden test failure).
 jupyter notebook munassiq_capstone.ipynb          # run top-to-bottom from the repo root
 ```
 

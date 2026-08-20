@@ -1,6 +1,8 @@
 """اختبار الشريحة 1 — السقالة: البيئة، ChatGroq، وسياج الوثائق التركيبية."""
 
 import os
+
+import pytest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -8,6 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def test_env_and_corpus_guarded():
     # 1) البيئة محمّلة (المفتاحان غير فارغين) — دون طباعة أي قيمة.
+    # على جهاز بلا مفاتيح تُزرع دمى للبناء المحلي (انظر conftest) — فحص
+    # اكتمال البيئة الحقيقية لا معنى له حينها ويُتخطى بهدوء.
+    if os.environ.get("MUNASSIQ_DUMMY_KEYS"):
+        pytest.skip("بيئة بلا مفاتيح حقيقية — فحص اكتمال البيئة يُتخطى")
     assert os.environ.get("GROQ_API_KEY"), "GROQ_API_KEY غائب من البيئة بعد تحميل config"
     assert os.environ.get(
         "LANGSMITH_API_KEY"

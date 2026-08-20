@@ -44,6 +44,7 @@ def _assert_redacted(run: dict) -> None:
     assert not leaked, f"رابط تسرّب في الحقول {leaked} — قرار الأمن: بلا روابط"
 
 
+@pytest.mark.langsmith
 def test_tracing_env_is_correctly_named(monkeypatch):
     """الاسم الصحيح يمرّ، والاسم الخاطئ يُوقَف برسالة تسمّي الصحيح.
 
@@ -85,6 +86,7 @@ def test_tracing_env_is_correctly_named(monkeypatch):
     )
 
 
+@pytest.mark.langsmith
 def test_langsmith_query_works():
     """الاستعلام والاتصال يعملان — بلا توليد أي run جديد ولا حصة نموذج.
 
@@ -100,6 +102,7 @@ def test_langsmith_query_works():
     assert run["name"], f"اسم الـrun فارغ: {run!r}"
 
 
+@pytest.mark.langsmith
 def test_wait_for_recent_run_times_out_without_matches():
     """المهلة تنقضي فيُرمى خطأ صريح — لا انتظارٌ بلا نهاية ولا ``None`` صامت.
 
